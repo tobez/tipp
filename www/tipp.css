@@ -1,0 +1,462 @@
+body {
+	font-family: Verdana,Arial,sans-serif;
+}
+
+.linklist ul {
+	list-style: none;
+	margin: 10px;
+	padding: 0;
+}
+
+.linklist ul li a {
+	color: #900;
+	text-decoration: none;
+}
+
+a.ip {
+	color: #900;
+	text-decoration: none;
+}
+
+a.address-range {
+	color: #900;
+	text-decoration: none;
+}
+
+td.network a {
+	color: #900;
+	text-decoration: none;
+}
+
+a.ip-history {
+	color: #900;
+	text-decoration: none;
+}
+
+a.net-history {
+	color: #900;
+	text-decoration: none;
+}
+
+a.show-anyway {
+	color: #900;
+}
+
+.netinfo {
+	font-size: 75%;
+}
+
+.noteworthy {
+	color: #0c0;
+}
+
+h1 {
+	margin-top: 35px;
+	margin-bottom: 15px;
+	font-size: 24px;
+}
+
+h2 {
+	font-size: small;
+	padding-left: 15px;
+}
+
+#navigation-form td {
+	padding-right: 10px;
+}
+
+#navigation-form td.home-button {
+	padding-left: 40px;
+}
+
+#navigation-form td.input {
+	padding-right: 0px;
+}
+
+.tooltip {
+	position: absolute;
+	padding: 10px 13px;
+	top: 0;
+	left: 0;
+	z-index: 2;
+	display: none;
+	color: #333;
+	background-color: #f5f5b5;
+	border: 1px solid #DECA7E;
+	font-family: Verdana,Arial,sans-serif;
+	font-size: 12px;
+	line-height: 18px;
+	text-align: center;
+}
+
+form.button-form {
+	/* border: 1px solid #DECA7E; */
+	margin: 0px;
+}
+
+form.changelog-filter-form {
+	margin-bottom: 0px;
+}
+
+form.changelog-form {
+	margin-top: 0px;
+}
+
+div.network-edit {
+	border: 1px solid #800;
+	margin: 15px 10px 10px 10px;
+	padding: 5px 5px 0px 5px;
+}
+
+div.edit-class-range {
+	border: 1px solid #800;
+	margin: 15px 10px 10px 10px;
+	padding: 5px 5px 0px 5px;
+}
+
+div.ip-edit {
+	border: 1px solid #800;
+	margin: 15px 10px 10px 10px;
+	padding: 5px 5px 0px 5px;
+	background-color: #fff;
+}
+
+div.edit-range-form {
+	border: 1px solid #800;
+	margin: 15px 10px 10px 10px;
+	padding: 5px 5px 0px 5px;
+	background-color: #fff;
+}
+
+div#add-form {
+	border: 1px solid #800;
+	margin: 15px 10px 10px 10px;
+	padding: 5px 5px 0px 5px;
+}
+
+div.add-form {
+	border: 1px solid #800;
+	margin: 15px 10px 10px 10px;
+	padding: 5px 5px 0px 5px;
+}
+
+div.ip-net {
+	background-color: #fff;
+}
+
+div.ip-net div {
+	padding-bottom: 5px;
+}
+
+div.edit-header {
+	display: inline;
+	position: relative;
+	top: -10px;
+	border: none;
+	padding: 5px 10px 5px 10px;
+	/* margin: -16px 0 10px 0px; */
+	font-family: Verdana,Arial,sans-serif;
+	font-size: 70%;
+	background-color: #800;
+	color: #fff;
+}
+
+div.edit-form {
+	margin-top: 15px;
+}
+
+/* top right bottom left */
+/* span.ui-icon.form-icon {margin: 0 5px 0 0;position: relative;left: .2em;top: 50%;margin-top: -8px;} */
+/* span.ui-icon.form-icon { display: inline; } */
+.ui-corner-all { border-radius: .4em; }
+.ui-widget { font-family: Arial,sans-serif; font-size: 80%; }
+span.form-icon { float: left; margin: 0 5px 0 0; }
+span.form-icon.right { float: none; }
+span.form-icon.right2 { float: none; margin-left: 5px; }
+.no-icon { width: 16px; height: 16px; }
+.no-icon { display: block; text-indent: -99999px; overflow: hidden; background-repeat: no-repeat; }
+input.with-icon { float: left; margin: 0 5px 0 0; }
+span.with-icon { float: left; margin: 0 5px 0 0; }
+button.form-icon { 
+	outline: 0; 
+	margin:0 0 0 0; 
+	padding: 0px 0px; 
+	text-decoration:none !important; 
+	cursor:pointer; 
+	position: relative; 
+	top: 1px;
+	text-align: center; 
+	zoom: 1; 
+	background-color: #fff;
+	border: none;
+}
+
+div.ip-history {
+	font-size: 133%;
+}
+
+table.changelog div.history {
+	font-size: 133%;
+	background-color: #fff;
+}
+
+/* .ui-state-error, .ui-widget-content .ui-state-error {border: 1px solid #cc0000; background: #eee7e7 url(images/ui-bg_diagonals-thick_55_eee7e7_40x40.png) 50% 50% repeat; color: #cc0000; } */
+
+table.history {
+	font-size: 75%;
+	border-collapse: collapse;
+}
+
+table.history th {
+	text-align: left;
+	padding: 2px 4px;
+}
+
+table.history td {
+	text-align: left;
+	padding: 2px 4px;
+}
+
+table.history td.date {
+	font-size: 90%;
+}
+
+table.history td.class_name {
+	font-size: 90%;
+}
+
+table.history td.description {
+	padding: 2px 8px;
+}
+
+table.history tr.alt-row {
+	background-color: #F4D2D2;
+}
+
+table.address-pages {
+	font-size: 50%;
+	border-collapse: collapse;
+}
+
+div.ip-net {
+	font-size: 133%;
+}
+
+table.address-pages td {
+	text-align: left;
+	margin-right: 5px;
+	padding-right: 5px;
+	padding-left: 5px;
+	padding-bottom: 2px;
+	padding-top: 0px;
+}
+
+table.address-pages td.selected {
+	background-color: #800;
+	color: #fff;
+}
+
+table.address-pages td.selected a {
+	background-color: #800;
+	color: #fff;
+}
+
+div.address-list {
+	margin-top: 5px;
+	margin-bottom: 10px;
+}
+
+div.addresses {
+	border: 1px solid #800;
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+
+table.addresses {
+	font-size: 75%;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+table.addresses tr.alt-row {
+	background-color: #F4DADA;
+}
+
+table.addresses td {
+	text-align: left;
+	vertical-align: top;
+}
+
+table.networks td {
+	text-align: left;
+	vertical-align: top;
+}
+
+table.addresses td.ip {
+	width: 11em;
+}
+
+table.networks {
+	width: 95%;
+	border-collapse: collapse;
+	margin-left: 20px;
+}
+
+table.networks td.network {
+	width: 13em;
+	font-size: 85%;
+}
+
+table.networks td.class_name {
+	font-size: 75%;
+}
+
+table.networks tr.alt-row {
+	background-color: #F4DADA;
+}
+
+table.networks tr.free {
+	background-color: #d0f0c0;
+}
+
+table.networks tr.free.alt-row {
+	background-color: #ACE1AF;
+}
+
+table.addresses td.description {
+	padding: 2px 12px;
+}
+
+td.label {
+	vertical-align: top;
+	font-size: 75%;
+}
+
+td.info {
+	font-size: 60%;
+}
+
+table.changelog-form td.label {
+	vertical-align: middle;
+}
+
+.statusbar
+{
+	position: fixed;
+	top: 1px;
+	left: 0px;
+	right: 0px;
+	height: 16px;    
+	padding: 5px;
+
+	background-color: #F4D2D2;
+	color: black;    
+	border: solid 1px #800;
+
+	z-index: 200;
+
+	overflow: hidden;
+	overflow-y: auto; 
+
+	font-size: 12px;
+}
+
+.loader
+{
+	background-image: url(images/ajax-loader.gif);
+	background-repeat: no-repeat;
+	background-position: 99% center; 
+}
+
+#status-area {
+	float: left;
+}
+
+#login-name {
+	float: right;
+	color: #444;
+	margin-right: 30px;
+}
+
+.statusbarhighlight
+{
+	background-color: #F4B2B2;
+	color: black;
+	border: solid 1px #800;
+}
+
+.networkhighlight
+{
+	background-color: #F4B2B2;
+}
+
+table.changelog {
+	width: 90%;
+	font-size: 75%;
+	border-collapse: collapse;
+}
+
+table.changelog tr.alt-row {
+	background-color: #F4D2D2;
+}
+
+table.changelog td {
+	text-align: left;
+	vertical-align: top;
+	padding: 2px 4px;
+}
+
+table.changelog td.date {
+	font-size: 90%;
+	width: 10em;
+}
+
+table.changelog td.who {
+	font-size: 90%;
+	width: 8em;
+}
+
+table.changelog td.change {
+	padding: 2px 8px;
+}
+
+table.changelog td.right {
+	text-align: right;
+}
+
+tr.clip {
+	border: solid 1px #800;
+}
+
+tr.special { 
+	background: #eee7e7 url(jquery-ui/css/blitzer/images/ui-bg_diagonals-thick_55_eee7e7_40x40.png) 50% 50% repeat;
+	color: #cc0000;
+	border-left: 1px solid #cc0000;
+	border-right: 1px solid #cc0000;
+}
+
+tr.special td {
+	border-bottom: 1px solid #cc0000;
+	border-top: 1px solid #cc0000;
+}
+
+p.netlist {
+	font-size: 90%;
+	font-weight: bold;
+}
+
+.tr-like {
+	display: table-row;
+}
+.td-like {
+	display: table-cell;
+}
+
+a.has-free-space {
+	color: #080 !important;
+}
+
+li.class-range span.description {
+	padding-left: 1em;
+	font-size: 80%;
+}
