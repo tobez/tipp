@@ -1305,6 +1305,10 @@ function submit_remove_network(e, $li, $form)
 			}, function (res) {
 				message(res.msg);
 				$form.remove();
+				var $pages = $li.next('tr');
+				if ($pages.find("div.address-list").length > 0) {
+					$pages.find("div.address-list").slideUp("fast", function () { $pages.remove() });
+				}
 				$li.remove();
 			});
 		});
