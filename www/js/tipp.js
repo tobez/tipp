@@ -77,6 +77,11 @@ function browse()
 			add_class_link($li.find("a.browse-class"), v.id);
 		}
 		$("#view").append($div);
+		$("#main-content").selectable({
+			filter: ".can-select",
+			delay: 20,
+			distance: 10,
+		});
 		$div.slideDown("fast");
 	});
 }
@@ -704,7 +709,7 @@ function insert_network(v)
 {
 	var $ni;
 	if (v.free == 1) {
-		$ni = $("<tr class='free network'><td class='network'>" +
+		$ni = $("<tr class='free network can-select'><td class='network'>" +
 			"<form class='button-form'>" +
 			'<span class="form-icon no-icon"></span> ' +
 			'<span>' +
@@ -714,7 +719,7 @@ function insert_network(v)
 			"</td><td class='description'>" +
 			"<span class='netinfo'>" + v.descr + "</span></td></tr>");
 	} else {
-		$ni = $("<tr class='network'><td class='network'>" +
+		$ni = $("<tr class='network can-select'><td class='network'>" +
 			"<form class='button-form'>" +
 			'<a class="edit-button" href="#" title="Edit"><span class="form-icon ui-icon ui-icon-document"></span></a> ' +
 			'<span>' +
