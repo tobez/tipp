@@ -460,3 +460,7 @@ li.class-range span.description {
 	padding-left: 1em;
 	font-size: 80%;
 }
+
+.ui-selecting { background: #FECA40; }
+.ui-selected { background: #F39814; }
+
