@@ -1217,31 +1217,7 @@ function edit_ip_main($t, $form_td)
 		$div.slideUp("fast", function () { $(this).remove() });
 	} else {
 		var ip = $t.text();
-		var form = '<div class="ip-edit"><form class="ip-edit-form">' +
-			'<div class="edit-header">Editing IP ' + ip + '</div><div class="edit-form">' +
-			'<table>' +
-			'<tr><td class="label">Description:</td><td>' + 
-			'<input type="text" size="64" maxlength="256" class="ip-description"/></td></tr>' +
-			'<tr><td class="label">Hostname:</td><td>' + 
-			'<input type="text" size="60" maxlength="256" class="ip-hostname with-icon"/>' +
-			'<a href="#" title="Lookup IP in DNS"><span class="form-icon ui-icon ui-icon-gear right nslookup"></span>' +
-			'</td></tr>' +
-			'<tr><td class="label">Location:</td><td>' + 
-			'<input type="text" size="32" maxlength="256" class="ip-location"/></td></tr>' +
-			'<tr><td class="label">Contact phone:</td><td>' + 
-			'<input type="text" size="16" maxlength="256" class="ip-phone"/></td></tr>' +
-			'<tr><td class="label">Owner/responsible:</td><td>' + 
-			'<input type="text" size="32" maxlength="256" class="ip-owner"/></td></tr>' +
-			'<tr><td class="label">Comments:</td><td>' + 
-			'<textarea rows=6 cols=64 class="ip-comments"></textarea></td></tr>' +
-			'</table>' +
-			'<p>' +
-			"<input class='ok-button' type='image' src='/images/notification_done.png' title='Save'/> " +
-			"<input class='cancel-button' type='image' src='/images/notification_error.png' title='Cancel'/> &nbsp; &nbsp; " +
-			"<input class='history-button' type='image' src='/images/clock.png' title='History'/> &nbsp; &nbsp; " +
-			"<input class='remove-button' type='image' src='/images/notification_remove.png' title='Remove'/></p>" +
-			'</div></form></div>';
-		var $form = $(form).hide();
+		var $form = template('ip-edit-dialog', { ip : ip }).hide();
 		$form.data("@ip", ip);
 		fetch_ip_info($form, ip);
 		$form_td.append($form);
@@ -1453,6 +1429,11 @@ function submit_edit_network(e, $ni, $form)
 		$tab.find('tr.network:nth-child(even)').addClass('alt-row');
 		$new_ni.effect("highlight", {}, 3000);
 	});
+}
+
+function template(name, data)
+{
+	return $("#" + name).children().autoRender(data).clone();
 }
 
 function carp(err, $descr)

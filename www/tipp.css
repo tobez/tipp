@@ -89,6 +89,10 @@ h2 {
 	text-align: center;
 }
 
+.templates {
+	display: none;
+}
+
 form.button-form {
 	/* border: 1px solid #DECA7E; */
 	margin: 0px;
