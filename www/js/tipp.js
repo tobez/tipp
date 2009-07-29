@@ -83,7 +83,7 @@ function browse()
 			add_class_link($li.find("a.browse-class"), v.id);
 		}
 		$("#view").append($div);
-		$("#main-content").selectable({
+		$("#main-content-XXX").selectable({
 			filter: ".can-select",
 			delay: 20,
 			distance: 10,
