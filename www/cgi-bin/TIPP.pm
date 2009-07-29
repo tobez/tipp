@@ -5,7 +5,7 @@ our $db_host = "192.168.42.200";
 our $db_user = "tipp";
 our $db_pass = "";
 
-our $extra_header = " - Telia - test installation";
+our $extra_header = " - development installation";
 
 our $timezone = 'CEST';
 
