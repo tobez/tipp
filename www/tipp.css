@@ -312,7 +312,7 @@ table.networks td.class_name {
 }
 
 table.networks tr.alt-row {
-	/* background-color: #F4DADA; */
+	background-color: #FFF5F5;
 }
 
 table.networks tr.free {
@@ -320,41 +320,49 @@ table.networks tr.free {
 }
 
 table.networks tr.free.alt-row {
-/*	background-color: #ACE1AF; */
+	background-color: #d5f5c5;
 }
 
 table.networks tr.ui-selecting {
-	background-color: #d290f7;
+	background-color: #678db2;
+	color: #fff;
 }
 
 table.networks tr.alt-row.ui-selecting {
-	background-color: #d290f7;
+	background-color: #678db2;
+	color: #fff;
 }
 
 table.networks tr.ui-selected {
-	background-color: #d290f7;
+	background-color: #678db2;
+	color: #fff;
 }
 
 table.networks tr.alt-row.ui-selected {
-	background-color: #d290f7;
+	background-color: #678db2;
+	color: #fff;
 }
 
 table.networks tr.free.ui-selecting {
-	background-color: #d290f7;
+	background-color: #678db2;
+	color: #fff;
 }
 
 table.networks tr.free.ui-selected {
-	background-color: #d290f7;
+	background-color: #678db2;
+	color: #fff;
 }
 
 table.networks tr.free.alt-row.ui-selecting {
 /*	background-color: #ACE1AF; */
-	background-color: #d290f7;
+	background-color: #678db2;
+	color: #fff;
 }
 
 table.networks tr.free.alt-row.ui-selected {
 /*	background-color: #ACE1AF; */
-	background-color: #d290f7;
+	background-color: #678db2;
+	color: #fff;
 }
 
 table.addresses td.description {
@@ -494,3 +502,25 @@ li.class-range span.description {
 	padding-left: 1em;
 	font-size: 80%;
 }
+
+#select-menu {
+	position: absolute;
+	padding: 10px 10px;
+	top: 0;
+	left: 0;
+	z-index: 10;
+	display: block;
+	background-color: #F4D2D2;
+	color: black;    
+	border: solid 2px #800;
+	font-family: Verdana,Arial,sans-serif;
+	font-size: 12px;
+	line-height: 18px;
+}
+
+#select-menu ul {
+	list-style: none;
+	margin: 2px;
+	padding: 0;
+}
+

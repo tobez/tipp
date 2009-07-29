@@ -23,35 +23,41 @@ function init()
 	$('#search-button').click(function (ev) {
 		ev.preventDefault();
 		ev.stopPropagation();
+		clear_selection();
 		$("#main-content").remove();
 		search();
 	});
 	$('#home-button').click(function (ev) {
 		ev.preventDefault();
 		ev.stopPropagation();
+		clear_selection();
 		$("#main-content").remove();
 		browse();
 	});
 	$('#net-view-button').click(function (ev) {
 		ev.preventDefault();
 		ev.stopPropagation();
+		clear_selection();
 		$("#main-content").remove();
 		net_view();
 	});
 	$('#add-button').click(function (ev) {
 		ev.preventDefault();
 		ev.stopPropagation();
+		clear_selection();
 		add_network();
 	});
 	$('#changelog-button').click(function (ev) {
 		ev.preventDefault();
 		ev.stopPropagation();
+		clear_selection();
 		$("#main-content").remove();
 		view_changes();
 	});
 	$('#add-range-button').click(function (ev) {
 		ev.preventDefault();
 		ev.stopPropagation();
+		clear_selection();
 		add_class_range();
 	});
 
@@ -81,6 +87,24 @@ function browse()
 			filter: ".can-select",
 			delay: 20,
 			distance: 10,
+			start: function () {
+				$("#select-menu").remove();
+			},
+			stop: function (ev) {
+				var $menu = $("<div id='select-menu'>" +
+					"<ul>" +
+					"<li>Cancel</li>" +
+					"<li>&nbsp;</li>" +
+					"<li>Merge networks</li>" +
+					"<li>Export CSV</li>" +
+					"</ul>" +
+					"</div>");
+				$menu.css({
+					left: ev.clientX-30,
+					top:  ev.clientY-24
+				});
+				$("#view").append($menu);
+			}
 		});
 		$div.slideDown("fast");
 	});
@@ -396,6 +420,7 @@ function add_network($where)
 		$form.find('.ok-button').click(function (ev) {
 			ev.preventDefault();
 			ev.stopPropagation();
+			clear_selection();
 			var $net = $form.find(".network");
 			var $descr = $form.find(".network-description");
 			var $class = $form.find(".network-class");
@@ -533,6 +558,7 @@ function add_class_link($el, class_id)
 {
 	$el.unbind("click");
 	$el.click(function(ev) {
+		clear_selection();
 		remote({what: "class", id: class_id},
 		function (res) {
 			$el.find("span.ui-icon").removeClass("ui-icon-carat-1-e");
@@ -583,6 +609,7 @@ function class_range_net_link($li)
 	$li.find(".allocate").click(function(ev) {
 		ev.preventDefault();
 		ev.stopPropagation();
+		clear_selection();
 		var $form = $li.find("div.add-form.class-range");
 		if ($form.length > 0)
 			$form.slideUp("fast", function () { $form.remove(); });
@@ -596,6 +623,7 @@ function class_range_edit_link($li, ev)
 	$li.find(".edit-range").click(function(ev) {
 		ev.preventDefault();
 		ev.stopPropagation();
+		clear_selection();
 		var $form = $li.find("div.edit-class-range");
 		if ($form.length > 0)
 			$form.slideUp("fast", function () { $form.remove(); });
@@ -609,6 +637,7 @@ function class_range_remove_link($li, ev)
 	$li.find(".delete-range").click(function(ev) {
 		ev.preventDefault();
 		ev.stopPropagation();
+		clear_selection();
 		var v = $li.data("@net");
 		ask("All information about<br/>class range " + v.net + "<br/>will be deleted!", function () {
 			remote({what: "remove-class-range", id: v.id}, function (res) {
@@ -674,6 +703,7 @@ function remove_class_link($el, class_id)
 		$el.parent().find("div").slideUp("fast", function () { $(this).remove() });
 		ev.preventDefault();
 		ev.stopPropagation();
+		clear_selection();
 		add_class_link($el, class_id);
 	});
 }
@@ -684,6 +714,7 @@ function add_net_link($li, class_range_id, limit)
 	var $main_a = $li.find("a.show-net.without-free");
 	$all_a.unbind("click");
 	$all_a.click(function(ev) {
+		clear_selection();
 		remote({what: "net", id: class_range_id, limit: limit, free: $(ev.target).closest(".with-free").length > 0},
 		function (res) {
 			$main_a.find("span.ui-icon").removeClass("ui-icon-carat-1-e");
@@ -737,6 +768,7 @@ function insert_network(v)
 				id2class(v.parent_class_id) + '</strong></u>'
 		});
 	}
+	clear_selection();
 	$ni.data("@net", v).find(".edit-button").click(function(ev){edit_network($ni, ev)});
 	add_address_link($ni);
 	return $ni;
@@ -753,6 +785,7 @@ function remove_net_link($li, class_range_id, limit)
 		$main_a.closest("li").find("div.networks").slideUp("fast", function () { $(this).remove() });
 		ev.preventDefault();
 		ev.stopPropagation();
+		clear_selection();
 		add_net_link($li, class_range_id, limit);
 	});
 }
@@ -762,6 +795,7 @@ function add_address_link($li)
 	var v = $li.data("@net");
 	var $el = $li.find("a.address-link");
 	$el.unbind("click");
+	clear_selection();
 	if (v.free == 1) {
 		$el.click(function(ev) {
 			ev.preventDefault();
@@ -789,6 +823,7 @@ function remove_address_link($li, $pages)
 	var $el = $li.find("a.address-link");
 	$el.unbind("click");
 	$el.click(function (ev) {
+		clear_selection();
 		$pages.find("div.address-list").slideUp("fast", function () { $pages.remove() });
 		ev.preventDefault();
 		ev.stopPropagation();
@@ -798,6 +833,7 @@ function remove_address_link($li, $pages)
 
 function edit_network($li, ev)
 {
+	clear_selection();
 	ev.preventDefault();
 	ev.stopPropagation();
 	var $edit_icon = $(ev.target);
@@ -919,6 +955,7 @@ function add_address_page_switch_link($pages, $a, net, range)
 function add_edit_range($pages, ni)
 {
 	$pages.find(".edit-range").click(function (ev) {
+		clear_selection();
 		ev.preventDefault();
 		ev.stopPropagation();
 		var $form = $pages.find(".edit-range-form");
@@ -979,6 +1016,7 @@ function add_edit_range($pages, ni)
 function add_edit_range_list($pages, ni)
 {
 	$pages.find(".edit-range-list").click(function (ev) {
+		clear_selection();
 		ev.preventDefault();
 		ev.stopPropagation();
 		var $form = $pages.find(".edit-range-form");
@@ -1050,6 +1088,7 @@ function submit_edit_ip_range_list(ev, $form)
 function add_split_mode_link($pages)
 {
 	$pages.find(".clip-mode").data("clip-mode", false).click(function(ev) {
+		clear_selection();
 		ev.preventDefault();
 		ev.stopPropagation();
 		var clip_mode = $pages.find(".clip-mode").data("clip-mode");
@@ -1129,6 +1168,7 @@ function edit_ip(ev)
 {
 	var $t = $(ev.target);
 	if ($t.is("a.ip") && $t.parent().is("td.ip")) {
+		clear_selection();
 		ev.preventDefault();
 		ev.stopPropagation();
 		var $form_td = $t.parent().parent().find("td.description:first");
@@ -1140,6 +1180,7 @@ function edit_ip(ev)
 		}
 	} else if (($t.is("a.show-net") && $t.parent().is("td.ip")) ||
 			   ($t.parent().is("a.show-net") && $t.parent().parent().is("td.ip"))) {
+		clear_selection();
 		ev.preventDefault();
 		ev.stopPropagation();
 
@@ -1609,3 +1650,10 @@ function remote(args, func)
 		func(r); loading(false);
 	}, "json");
 }
+
+function clear_selection()
+{
+	$("#select-menu").remove();
+//	$(".ui-selected").removeClass("ui-selected");
+}
+
