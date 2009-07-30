@@ -882,7 +882,7 @@ sub handle_split
 				id			=> sql("nextval('networks_id_seq')"),
 				net			=> "$nn",
 				class_id	=> $nf->{class_id},
-				descr		=> $nf->{descr},
+				descr		=> "[split] $nf->{descr}",
 				created		=> $when,
 				invalidated	=> 0,
 				created_by	=> $who,
