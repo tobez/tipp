@@ -46,6 +46,7 @@ sub handle_config
 		extra_header => $TIPP::extra_header,
 		login        => remote_user(),
 		caps         => \%caps,
+		linkify      => \@TIPP::linkify,
 	};
 }
 

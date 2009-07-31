@@ -23,6 +23,11 @@ a.address-range {
 	text-decoration: none;
 }
 
+a.linkified {
+	color: #900;
+	text-decoration: underline !important; 
+}
+
 td.network a {
 	color: #900;
 	text-decoration: none;

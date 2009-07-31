@@ -4,6 +4,7 @@ var _CHANGELOG_PAGE_SIZE;
 var _statusbar;
 var _status_area;
 var _SERVER_CAPS;
+var _LINKIFY;
 function init()
 {
 	_URL = "/cgi-bin/tipp.cgi";
@@ -14,6 +15,7 @@ function init()
 
 	remote({ what: "config" }, function (res) {
 		_SERVER_CAPS = res.caps;
+		_LINKIFY = res.linkify;
 		$("h1").text($("h1").text() + res.extra_header);
 		$("title").text($("title").text() + res.extra_header);
 		$("#login-name").html("Welcome, <strong>" + res.login + "</strong>");
@@ -748,7 +750,7 @@ function insert_network(v)
 			"</span></form></td><td class='class_name'>" +
 			"<span class='netinfo class_name'> " + v.class_name + "</span>" +
 			"</td><td class='description'>" +
-			"<span class='netinfo'>" + v.descr + "</span></td></tr>");
+			"<span class='netinfo'>" + linkify(v.descr) + "</span></td></tr>");
 	} else {
 		$ni = $("<tr class='network can-select'><td class='network'>" +
 			"<form class='button-form'>" +
@@ -758,7 +760,7 @@ function insert_network(v)
 			"</span></form></td><td class='class_name'>" +
 			"<span class='netinfo class_name'> " + v.class_name + "</span>" +
 			"</td><td class='description'>" +
-			"<span class='netinfo'>" + v.descr + "</span></td></tr>");
+			"<span class='netinfo'>" + linkify(v.descr) + "</span></td></tr>");
 	}
 	if (v.wrong_class == 1) {
 		$ni.find("span.class_name").addClass("noteworthy").simpletip({ 
@@ -1516,11 +1518,11 @@ function show_network_history(e, $form, net, with_fill_in, special_date)
 function ip_description(ip)
 {
 	if (ip.hostname && ip.hostname.length > 0 && ip.descr && ip.descr.length > 0)
-		return ip.hostname + ": " + ip.descr;
+		return linkify(ip.hostname + ": " + ip.descr);
 	if (ip.hostname && ip.hostname.length > 0)
-		return ip.hostname;
+		return linkify(ip.hostname);
 	if (ip.descr && ip.descr.length > 0)
-		return ip.descr;
+		return linkify(ip.descr);
 	return "";
 }
 
@@ -1638,3 +1640,13 @@ function clear_selection()
 //	$(".ui-selected").removeClass("ui-selected");
 }
 
+function linkify(t)
+{
+	if (t == "")	return t;
+	var n = _LINKIFY.length;
+	for (var i = 0; i < n; i++) {
+		var l = _LINKIFY[i];
+		t = t.replace(new RegExp(l.match), "<a class='linkified' target='_blank' href='" + l.url + "'>$1</a>");
+	}
+	return t;
+}
