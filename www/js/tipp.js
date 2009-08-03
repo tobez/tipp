@@ -214,9 +214,7 @@ function possibly_full_search(what, msg)
 
 function view_changes()
 {
-	var $div = $("<div class='linklist' id='main-content'></div>");
-	$div.append($("<h2>Change log</h2>"));
-	$div.append(gen_change_log_filter_form());
+	var $div = snippet("change-log-div");
 	$div.data("@page", 0);
 	$("#view").append($div);
 	$div.slideDown("fast", function () { $("#changelog-filter").focus(); });
@@ -1219,7 +1217,7 @@ function edit_ip_main($t, $form_td)
 		$div.slideUp("fast", function () { $(this).remove() });
 	} else {
 		var ip = $t.text();
-		var $form = template('ip-edit-dialog', { ip : ip }).hide();
+		var $form = snippet('ip-edit-dialog', { ip : ip }).hide();
 		$form.data("@ip", ip);
 		fetch_ip_info($form, ip);
 		$form_td.append($form);
@@ -1433,7 +1431,7 @@ function submit_edit_network(e, $ni, $form)
 	});
 }
 
-function template(name, data)
+function snippet(name, data)
 {
 	return $("#" + name).children().autoRender(data).clone();
 }
@@ -1474,9 +1472,7 @@ function show_network_history(e, $form, net, with_fill_in, special_date)
 		$hist.slideUp("fast", function () { $(this).remove() });
 	} else {
 		remote({ what: "net-history", net: net }, function (res) {
-			var $history = $("<div class='history'><table class='history'>" +
-				"<tr><th>From</th><th>Until</th><th>Class</th>" +
-				"<th>Description</th><th>Who</th><th></th></tr></table></div>");
+			var $history = snippet('network-history-table', {});
 			var $tab = $history.find("table.history");
 			var n = res.length;
 			var fill_in = "";
@@ -1486,15 +1482,17 @@ function show_network_history(e, $form, net, with_fill_in, special_date)
 			}
 			for (var i = 0; i < n; i++) {
 				var v = res[i];
-				var $tr = $(
-					"<tr><td class='date'>" + date_format(v.created) +
-					"</td><td class='date'>" + date_format(v.invalidated, "still valid") +
-					"</td><td class='class_name'>" + v.class_name +
-					"</td><td class='description'>" + v.descr +
-					"</td><td class='who'>" + v.created_by +
-					"</td><td class='actions'>" + fill_in + "</td></tr>");
-				if (special_date && special_date >= v.created && special_date - v.created <= 2)
+				var $tr = snippet('network-history-row', {
+					created:     date_format(v.created),
+					invalidated: date_format(v.invalidated, "still valid"),
+					class_name:  v.class_name,
+					description: v.descr,
+					who:         v.created_by,
+					actions:     fill_in
+				});
+				if (special_date && special_date >= v.created && special_date - v.created <= 2) {
 					$tr.addClass("special");
+				}
 				if (with_fill_in)
 					$tr.find("a.fill-in").data("@net", v).click(function (e) {
 						e.preventDefault();
@@ -1549,22 +1547,7 @@ function date_format(epoch, msg)
 
 function inline_alert(msg)
 {
-	return $('<div class="ui-widget inline-alert">' +
-		'<div class="ui-state-error ui-corner-all" style="padding: 0 .7em;">' +
-		'<p><span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span>' +
-		msg + '</p></div></div>');
-}
-
-function gen_change_log_filter_form()
-{
-	return $('<form class="changelog-filter-form"><table class="changelog-form"><tr>' +
-		'<td class="label">Changelog filter:' +
-		'</td><td class="input">' +
-		'<input type="text" size="32" maxlength="256" id="changelog-filter" name="changelog-filter"/>' +
-		'</td><td>' +
-		'<input id="changelog-filter-button" name="changelog-filter-button"' +
-			' type="image" src="/images/search.png" title="Filter" alt="Filter"/>' +
-		'</td></tr></table></form>');
+	return snippet("inline-alert", { msg : msg });
 }
 
 function button_icon(cl, icon, title)

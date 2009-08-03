@@ -71,6 +71,59 @@ Sorry...
 		</div></form></div>
 </div>
 
+<div id="network-history-table">
+	<div class='history'>
+		<table class='history'>
+			<tr>
+				<th>From</th><th>Until</th><th>Class</th>
+				<th>Description</th><th>Who</th><th></th>
+			</tr>
+		</table>
+	</div>
+</div>
+
+<table><tbody id="network-history-row">
+	<tr>
+		<td class='date created'></td>
+		<td class='date invalidated'></td>
+		<td class='class_name'></td>
+		<td class='description'></td>
+		<td class='who'></td>
+		<td class='actions'></td>
+	</tr>
+</tbody></table>
+
+<div id="inline-alert">
+	<div class="ui-widget inline-alert">
+		<div class="ui-state-error ui-corner-all" style="padding: 0 .7em;">
+			<p><span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span>
+			<span class="msg"></span>
+			</p>
+		</div>
+	</div>
+</div>
+
+<div id="change-log-div">
+	<div class='linklist' id='main-content'>
+		<h2>Change log</h2>
+		<form class="changelog-filter-form">
+		<table class="changelog-form">
+			<tr>
+				<td class="label">Changelog filter:</td>
+				<td class="input">
+					<input type="text" size="32" maxlength="256"
+						id="changelog-filter" name="changelog-filter"/>
+				</td>
+				<td>
+					<input id="changelog-filter-button" name="changelog-filter-button"
+						type="image" src="/images/search.png" title="Filter" alt="Filter"/>
+				</td>
+			</tr>
+		</table>
+		</form>
+	</div>
+</div>
+
 </div>
 </body>
 </html>
