@@ -878,12 +878,14 @@ sub handle_split
 	if (param("confirmed")) {
 		my $when = time;
 		my $who = remote_user();
+		my $descr = $nf->{descr};
+		$descr = "[split] $descr" unless $descr =~ /^\[split\]/;
 		for my $nn (@n) {
 			db_insert 'networks', {
 				id			=> sql("nextval('networks_id_seq')"),
 				net			=> "$nn",
 				class_id	=> $nf->{class_id},
-				descr		=> "[split] $nf->{descr}",
+				descr		=> $descr,
 				created		=> $when,
 				invalidated	=> 0,
 				created_by	=> $who,
