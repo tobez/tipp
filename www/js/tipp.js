@@ -1276,7 +1276,7 @@ function submit_edit_ip(e, $form)
 		var $descr = $form.closest("td.description");
 		$form.slideUp("fast", function () {
 			$(this).remove();
-			$descr.text(ip_description(res));
+			$descr.html(ip_description(res));
 			$tr.effect("highlight", {}, 3000);
 		});
 	});
@@ -1305,7 +1305,7 @@ function submit_remove_ip(e, $form)
 				var $descr = $form.closest("td.description");
 				$form.slideUp("fast", function () {
 					$(this).remove();
-					$descr.text(ip_description(res));
+					$descr.html(ip_description(res));
 					$tr.effect("highlight", {}, 3000);
 				});
 			});
