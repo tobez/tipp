@@ -124,6 +124,62 @@ Sorry...
 	</div>
 </div>
 
+<div id="edit-range-list-dialog">
+	<div class="edit-range-form"><form>
+		<div class="edit-header">
+			Filling-in range of IPs within <span class='net'></span>
+		</div>
+	<div class="edit-form"><table>
+		<tr>
+			<td class="label">Range start:</td>
+			<td><input type="text" size="16" maxlength="256" class="ip-start"/></td>
+		</tr>
+		<tr>
+			<td class="label">Range end:</td>
+			<td><input type="text" size="16" maxlength="256" class="ip-end"/></td>
+		</tr>
+		<tr>
+			<td class="info" colspan="2">
+				Please specify the list of hostnames to allocate.<br/>
+				The hostnames must be separated by spaces or tabs or newlines.
+			</td>
+		</tr>
+		<tr>
+			<td class="label">Hostnames:</td>
+			<td><textarea rows=10 cols=64 class="ip-hostnames"></textarea></td>
+		</tr>
+		<tr>
+			<td class="info" colspan="2">&nbsp;</td>
+		</tr>
+		<tr>
+			<td class="label">Description:</td>
+			<td><input type="text" size="64" maxlength="256" class="ip-description"/></td>
+		</tr>
+		<tr>
+			<td class="label">Location:</td>
+			<td><input type="text" size="32" maxlength="256" class="ip-location"/></td>
+		</tr>
+		<tr>
+			<td class="label">Contact phone:</td>
+			<td><input type="text" size="16" maxlength="256" class="ip-phone"/></td>
+		</tr>
+		<tr>
+			<td class="label">Owner/responsible:</td>
+			<td><input type="text" size="32" maxlength="256" class="ip-owner"/></td>
+		</tr>
+		<tr>
+			<td class="label">Comments:</td>
+			<td><textarea rows=6 cols=64 class="ip-comments"></textarea></td>
+		</tr>
+	</table>
+	<p>
+		<input class='ok-button' type='image' src='/images/notification_done.png' title='Save'/>
+		<input class='cancel-button' type='image' src='/images/notification_error.png' title='Cancel'/>
+	</p>
+	&nbsp; &nbsp;
+	</div></form></div>
+</div>
+
 </div>
 </body>
 </html>

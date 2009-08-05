@@ -1024,40 +1024,7 @@ function add_edit_range_list($pages, ni)
 			$form.slideUp("fast", function () { $form.remove(); });
 			return;
 		}
-		$form = $('<div class="edit-range-form"><form>' +
-			'<div class="edit-header">Filling-in range of IPs within ' + ni.net + '</div>' +
-			'<div class="edit-form">' +
-			'<table>' +
-			'<tr><td class="label">Range start:</td><td>' + 
-			'<input type="text" size="16" maxlength="256" class="ip-start"/></td></tr>' +
-			'<tr><td class="label">Range end:</td><td>' + 
-			'<input type="text" size="16" maxlength="256" class="ip-end"/></td></tr>' +
-			'<tr><td class="info" colspan="2">' +
-			'Please specify the list of hostnames to allocate.<br/>' +
-			'The hostnames must be separated by spaces or tabs or newlines.' +
-			'</td></tr>' + 
-			'<tr><td class="label">Hostnames:</td><td>' + 
-			'<textarea rows=10 cols=64 class="ip-hostnames"></textarea></td></tr>' +
-			'<tr><td class="info" colspan="2">' +
-			'&nbsp;' +
-			'</td></tr>' + 
-			'<tr><td class="label">Description:</td><td>' + 
-			'<input type="text" size="64" maxlength="256" class="ip-description"/></td></tr>' +
-			'<tr><td class="label">Location:</td><td>' + 
-			'<input type="text" size="32" maxlength="256" class="ip-location"/></td></tr>' +
-			'<tr><td class="label">Contact phone:</td><td>' + 
-			'<input type="text" size="16" maxlength="256" class="ip-phone"/></td></tr>' +
-			'<tr><td class="label">Owner/responsible:</td><td>' + 
-			'<input type="text" size="32" maxlength="256" class="ip-owner"/></td></tr>' +
-			'<tr><td class="label">Comments:</td><td>' + 
-			'<textarea rows=6 cols=64 class="ip-comments"></textarea></td></tr>' +
-			'</table>' +
-			'<p>' +
-			"<input class='ok-button' type='image' src='/images/notification_done.png' title='Save'/> " +
-			"<input class='cancel-button' type='image' src='/images/notification_error.png' title='Cancel'/> &nbsp; &nbsp; " +
-			'</div>' +
-			'</form></div>');
-		$form.hide();
+		$form = snippet("edit-range-list-dialog", { net: ni.net }).hide();
 		$form.find(".ip-start").val(ni.second);
 		$form.find(".ip-end").val(ni.next_to_last);
 		$pages.find(".address-list").prepend($form);
