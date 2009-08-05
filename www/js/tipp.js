@@ -1024,9 +1024,13 @@ function add_edit_range_list($pages, ni)
 			$form.slideUp("fast", function () { $form.remove(); });
 			return;
 		}
-		$form = snippet("edit-range-list-dialog", { net: ni.net }).hide();
-		$form.find(".ip-start").val(ni.second);
-		$form.find(".ip-end").val(ni.next_to_last);
+		$form = snippet("edit-range-list-dialog", {
+			net     : ni.net,
+			ip_start: ni.second,
+			ip_end  : ni.next_to_last
+		}).hide();
+		// $form.find(".ip-start").val(ni.second);
+		// $form.find(".ip-end").val(ni.next_to_last);
 		$pages.find(".address-list").prepend($form);
 		$form.slideDown("fast", function () {
 			$form.find(".ip-start").focus().select();
@@ -1042,6 +1046,42 @@ function add_edit_range_list($pages, ni)
 
 function submit_edit_ip_range(ev, $form)
 {
+	e.preventDefault();
+	e.stopPropagation();
+
+	var $descr    = $form.find(".ip-description");
+	var $hostname = $form.find(".ip-hostname");
+	var $location = $form.find(".ip-location");
+	var $phone    = $form.find(".ip-phone");
+	var $owner    = $form.find(".ip-owner");
+	var $comments = $form.find(".ip-comments");
+
+	if ($descr.val() == "" && $hostname.val() == "") {
+		$descr.effect("bounce", {direction: "left"});
+		$hostname.effect("bounce", {direction: "left"});
+		return carp("Either a description or a hostname or both must be given", $descr);
+	}
+	var ip = $form.data("@ip");
+
+	remote({
+		what:		"edit-ip",
+		ip:			ip,
+		descr:		$descr.val(),
+		hostname:	$hostname.val(),
+		location:	$location.val(),
+		phone:		$phone.val(),
+		owner:		$owner.val(),
+		comments:	$comments.val()
+	}, function (res) {
+		message(res.msg);
+		var $tr = $form.closest("tr.ip-info");
+		var $descr = $form.closest("td.description");
+		$form.slideUp("fast", function () {
+			$(this).remove();
+			$descr.html(ip_description(res));
+			$tr.effect("highlight", {}, 3000);
+		});
+	});
 }
 
 function submit_remove_ip_range(ev, $form)
