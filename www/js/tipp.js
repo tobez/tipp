@@ -1493,7 +1493,7 @@ function show_network_history(e, $form, net, with_fill_in, special_date)
 					created:     date_format(v.created),
 					invalidated: date_format(v.invalidated, "still valid"),
 					class_name:  v.class_name,
-					description: v.descr,
+					description: linkify(v.descr),
 					who:         v.created_by,
 					actions:     fill_in
 				});
