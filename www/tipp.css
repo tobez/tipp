@@ -316,8 +316,18 @@ table.networks td.network {
 	font-size: 85%;
 }
 
+table.networks td.ip {
+	font-size: 80%;
+}
+
 table.networks td.class_name {
 	font-size: 75%;
+}
+
+table.networks th {
+	text-align: left;
+	padding: 2px 4px;
+	font-size: 80%;
 }
 
 table.networks tr.alt-row {

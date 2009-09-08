@@ -62,6 +62,13 @@ function init()
 		clear_selection();
 		add_class_range();
 	});
+	$('#statistics-button').click(function (ev) {
+		ev.preventDefault();
+		ev.stopPropagation();
+		clear_selection();
+		$("#main-content").remove();
+		stat_view();
+	});
 
 	browse();
 }
@@ -132,6 +139,83 @@ function net_view()
 		$div.slideDown("fast");
 	});
 }
+
+function stat_view()
+{
+	remote({what: "top-level-nets"}, function (res) {
+		var $div = $("<div class='linklist' id='main-content'></div>");
+		$div.append($("<h2>IP Usage Statistics (network based)</h2>"));
+		var $table = $("<table class='networks'><tr><th>Supernet</th><th>Total IPs</th><th>Used IPs</th><th>Free IPs</th></tr></table>");
+		$div.append($table);
+		$("#view").append($div);
+		$div.show();
+		var n = res.length;
+		add_stat_line($div, $table, res, 0, n, 0, 0);
+	});
+}
+
+function add_stat_line($div, $table, res, i, n, all_total, all_used)
+{
+	if (i >= n) {
+		// finalize
+		$div.append(snippet("statistics-usage-summary", {
+            total : all_total,
+            used  : all_used,
+            free  : all_total - all_used,
+            usage : (100 * all_used / all_total).toFixed(1) + "%"
+		}));
+	} else {
+		remote({what: "net", id: null, limit: res[i], free: true},
+		function (nets) {
+			var n_nets = nets.length;
+			var ip_total = 0;
+			var ip_used  = 0;
+			var ip_free  = 0;
+			for (var k = 0; k < n_nets; k++) {
+				var net = nets[k];
+				if (net.free == 1) {
+					ip_free += net.sz;
+				} else {
+					ip_used += net.sz;
+					if (!net.private)	all_used += net.sz;
+				}
+				ip_total += net.sz;
+				if (!net.private)	all_total += net.sz;
+			}
+			var $tr = $("<tr class='network'><td class='network'>" + res[i] + "</td><td class='ip'>" +
+				ip_total + "</td><td class='ip'>" +
+				ip_used + "</td><td class='ip'>" +
+				ip_free + "</td></tr>");
+			if (net.private)
+				$tr.find(".network").addClass('noteworthy').simpletip({ 
+					fixed:    true,
+					position: 'top',
+					content:  '<a href="http://tools.ietf.org/html/rfc1918">RFC1918</a> range'
+				});
+			$table.append($tr);
+			$table.find('tr.network:nth-child(even)').addClass('alt-row');
+			add_stat_line($div, $table, res, i+1, n, all_total, all_used);
+		});
+	}
+}
+/*
+		remote({what: "net", id: null, limit: limit, free: true},
+		function (res) {
+			$main_a.find("span.ui-icon").removeClass("ui-icon-carat-1-e");
+			$main_a.find("span.ui-icon").addClass("ui-icon-carat-1-n");
+			var $div = $("<div class='linklist networks'></div>");
+			var $tab  = $("<table class='networks'></table>");
+			$div.hide().append($tab);
+			var n = res.length;
+			for (var i = 0; i < n; i++) {
+				$tab.append(insert_network(res[i]));
+			}
+			$tab.find('tr.network:nth-child(even)').addClass('alt-row');
+			$main_a.closest("li").append($div);
+			$div.slideDown("fast");
+			remove_net_link($li, class_range_id, limit);
+		});
+*/
 
 function search()
 {

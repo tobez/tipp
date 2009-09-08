@@ -732,6 +732,10 @@ sub handle_edit_ip
 	return $new;
 }
 
+sub xhandle_edit_range_list
+{
+}
+
 sub handle_remove_net
 {
 	my $dbh = connect_db();
@@ -1116,10 +1120,20 @@ sub gen_calculated_params
 {
 	my $c = shift;
 	my $n = Net::Netmask->new2($c->{net});
-	$c->{first} = $n->first;
-	$c->{last}  = $n->last;
-	$c->{second} = $n->nth(1);
-	$c->{next_to_last}  = $n->nth(-2);
+	$c->{first}        = $n->first;
+	$c->{last}         = $n->last;
+	$c->{second}       = $n->nth(1);
+	$c->{next_to_last} = $n->nth(-2);
+	$c->{sz}           = $n->size;
+	if ($c->{net} =~ /^10\.|^172\.|^192\.168\./) {
+		if ($c->{net} =~ /^10\./) {
+			$c->{private} = 1;
+		} elsif ($c->{net} =~ /^172\.(\d+)\./ && $1 >= 16 && $1 <= 31) {
+			$c->{private} = 1;
+		} elsif ($c->{net} =~ /^192\.168\./) {
+			$c->{private} = 1;
+		}
+	}
 }
 
 sub get_ip_info
