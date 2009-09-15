@@ -1,5 +1,26 @@
 This work is in part sponsored by Telia Denmark.
 
+Please note that various JavaScript libraries are
+bundled with this application only for convenience,
+and that they have their respective licenses,
+often different from the TIPP license.
+
+Here is the list:
+
+jquery
+	http://jquery.com/
+	License: MIT/GPL
+jquery-ui
+	http://jqueryui.com/
+	License: MIT/GPL
+jquery.simpletip
+	http://craigsworks.com/projects/simpletip/
+	License: GPLv3 ! problem, need to get rid of it
+pure
+	http://beebole.com/pure/
+	License: MIT
+
+
 Copyright (c) 2007-2009, Anton Berezin "<tobez@tobez.org>". All rights
 reserved.
 
