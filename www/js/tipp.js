@@ -1054,9 +1054,9 @@ function add_edit_range($pages, ni)
 			'<div class="edit-form">' +
 			'<table>' +
 			'<tr><td class="label">Range start:</td><td>' + 
-			'<input type="text" size="16" maxlength="256" class="ip-start"/></td></tr>' +
+			'<input type="text" size="16" maxlength="256" class="ip_start"/></td></tr>' +
 			'<tr><td class="label">Range end:</td><td>' + 
-			'<input type="text" size="16" maxlength="256" class="ip-end"/></td></tr>' +
+			'<input type="text" size="16" maxlength="256" class="ip_end"/></td></tr>' +
 			'<tr><td class="info" colspan="2">' +
 			'In the following fields you can designate parts of the text<br/>' +
 			'that will undergo autoincrementing by using the <strong>"[[]]"</strong> construct,<br/>' +
@@ -1083,11 +1083,11 @@ function add_edit_range($pages, ni)
 			'</div>' +
 			'</form></div>');
 		$form.hide();
-		$form.find(".ip-start").val(ni.second);
-		$form.find(".ip-end").val(ni.next_to_last);
+		$form.find(".ip_start").val(ni.second);
+		$form.find(".ip_end").val(ni.next_to_last);
 		$pages.find(".address-list").prepend($form);
 		$form.slideDown("fast", function () {
-			$form.find(".ip-start").focus().select();
+			$form.find(".ip_start").focus().select();
 		});
 		$form.find(".cancel-button").click(function (e) {
 			e.preventDefault();
@@ -1115,11 +1115,9 @@ function add_edit_range_list($pages, ni)
 			ip_start: ni.second,
 			ip_end  : ni.next_to_last
 		}).hide();
-		// $form.find(".ip-start").val(ni.second);
-		// $form.find(".ip-end").val(ni.next_to_last);
 		$pages.find(".address-list").prepend($form);
 		$form.slideDown("fast", function () {
-			$form.find(".ip-start").focus().select();
+			$form.find(".ip_start").focus().select();
 		});
 		$form.find(".cancel-button").click(function (e) {
 			e.preventDefault();
