@@ -122,7 +122,11 @@ $p = pure = {
 								if(repeatPrefix !== ''){
 									att[0] = repeatPrefix + '[\'' + att[0].replace(/\./g, '\'][\'') + '\']';}
 								if(!att[1]){ //not an attribute
-									att.push('nodeValue');}
+									if (n.nodeName == "INPUT")
+										att.push('value');
+									else 
+										att.push('nodeValue');
+								}
 								if(ap.type){ //append or prepend ?
 									att[0] = this.ap_format(att[0], att[1], n, ap.type);}
 								if (att[1]!='nodeValue'){ // remove the existing attribute if any
@@ -637,3 +641,4 @@ else if (typeof Sizzle !== 'undefined') {
 			sizzle[0] = $p.libs.render(sizzle[0], context, directives, html, true);
 			return sizzle;};
 		return sizzle;};}
+
