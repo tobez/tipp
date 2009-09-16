@@ -3,7 +3,8 @@ This work is in part sponsored by Telia Denmark.
 Please note that various JavaScript libraries are
 bundled with this application only for convenience,
 and that they have their respective licenses,
-often different from the TIPP license.
+often different from the TIPP license (but always
+compatible with it).
 
 Here is the list:
 
@@ -13,15 +14,15 @@ jquery
 jquery-ui
 	http://jqueryui.com/
 	License: MIT/GPL
-jquery.simpletip
-	http://craigsworks.com/projects/simpletip/
-	License: GPLv3 ! problem, need to get rid of it
+jquery.tooltip.js
+	http://www.socialembedded.com/labs/jQuery-Tooltip-Plugin/jQuery-Tooltip-Plugin.html
+	License: MIT/GPL
 pure
 	http://beebole.com/pure/
 	License: MIT
 
 
-Copyright (c) 2007-2009, Anton Berezin "<tobez@tobez.org>". All rights
+Copyright (c) 2009, Anton Berezin "<tobez@tobez.org>". All rights
 reserved.
 
 Redistribution and use in source and binary forms, with or without

@@ -187,9 +187,10 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
 				ip_used + "</td><td class='ip'>" +
 				ip_free + "</td></tr>");
 			if (net.private)
-				$tr.find(".network").addClass('noteworthy').simpletip({ 
-					fixed:    true,
-					position: 'top',
+				$tr.find(".network").addClass('noteworthy').tooltip({ 
+					cssClass: "tooltip",
+					xOffset:  10,
+					yOffset:  30,
 					content:  '<a href="http://tools.ietf.org/html/rfc1918">RFC1918</a> range'
 				});
 			$table.append($tr);
@@ -845,9 +846,10 @@ function insert_network(v)
 			"<span class='netinfo'>" + linkify(v.descr) + "</span></td></tr>");
 	}
 	if (v.wrong_class == 1) {
-		$ni.find("span.class_name").addClass("noteworthy").simpletip({ 
-			fixed:    true,
-			position: 'right',
+		$ni.find("span.class_name").addClass("noteworthy").tooltip({ 
+			cssClass: "tooltip",
+			xOffset:  10,
+			yOffset:  30,
 			content:  'Classified differently<br/>from its parent range,<br/><u><strong>' +
 				id2class(v.parent_class_id) + '</strong></u>'
 		});

@@ -732,7 +732,7 @@ sub handle_edit_ip
 	return $new;
 }
 
-sub xhandle_edit_range_list
+sub handle_edit_range_list
 {
 }
 
