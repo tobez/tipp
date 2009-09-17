@@ -17,7 +17,7 @@ function init()
 		_SERVER_CAPS = res.caps;
 		_LINKIFY = res.linkify;
 		$("h1").text($("h1").text() + res.extra_header);
-		$("title").text($("title").text() + res.extra_header);
+		document.title = document.title + res.extra_header;
 		$("#login-name").html("Welcome, <strong>" + res.login + "</strong>");
 	});
 
