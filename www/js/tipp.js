@@ -1389,7 +1389,7 @@ function submit_remove_ip(e, $form)
 				location:	"",
 				phone:		"",
 				owner:		"",
-				comments:	"",
+				comments:	""
 			}, function (res) {
 				message(res.msg);
 				var $tr = $form.closest("tr.ip-info");
@@ -1414,7 +1414,7 @@ function submit_remove_network(e, $li, $form)
 		function () {
 			remote({
 				what:		"remove-net",
-				id:			v.id,
+				id:			v.id
 			}, function (res) {
 				message(res.msg);
 				$form.remove();
