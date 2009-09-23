@@ -1,4 +1,23 @@
-This work is in part sponsored by Telia Denmark.
+TIPP is an IP Planning application for network departments of
+organizations with medium- to large-size networks. While providing all
+the necessary functions for keeping track of your IP and network
+allocations, it combines the simplicity of design and use with a clean
+and thoroughly modern look and feel.
+
+BROWSER COMPATIBILITY
+---------------------
+
+Any recent Firefox.  Any recent Opera.
+Any recent Safari.
+
+Not tested with Chrome.
+
+It sort of works with IE 6.0, but there is a number of kinks to be
+sorted out.  It definitely will not work at all with previous versions
+of IE.
+
+JAVASCRIPT LIBRARIES
+--------------------
 
 Please note that various JavaScript libraries are
 bundled with this application only for convenience,
@@ -21,6 +40,11 @@ pure
 	http://beebole.com/pure/
 	License: MIT
 
+
+LICENSE AND COPYRIGHT
+---------------------
+
+This work is in part sponsored by Telia Denmark.
 
 Copyright (c) 2009, Anton Berezin "<tobez@tobez.org>". All rights
 reserved.
