@@ -152,7 +152,23 @@ sub handle_net
 		}
 		@c = sort { $a->{nn} cmp $b->{nn} } (@c, @m);
 	}
+	my %c;
 	for my $c (@c) {
+		$c{$c->{net}} = $c unless $c->{free};
+	}
+	for my $c (@c) {
+		my $this = Net::Netmask->new2($c->{net});
+		my $super = Net::Netmask->new2($this->base . "/" . ($this->bits - 1));
+		my $neighbour;
+		if ($super->base eq $this->base) {
+			$neighbour = Net::Netmask->new2($super->broadcast . "/" . $this->bits);
+		} else {
+			$neighbour = Net::Netmask->new2($super->base . "/" . $this->bits);
+		}
+		my $merge_with = $c{$neighbour};
+		if ($merge_with && $merge_with->{class_id} == $c->{class_id}) {
+			$c->{merge_with} = "$neighbour";
+		}
 		delete $c->{nn};
 		delete $c->{parent_range_id};
 		$c->{descr} = u2p($c->{descr}||"");

@@ -934,8 +934,11 @@ function edit_network($li, ev)
 		"<input class='ok-button' type='image' src='/images/notification_done.png' title='Save'/> " +
 		"<input class='cancel-button' type='image' src='/images/notification_error.png' title='Cancel'/> &nbsp; &nbsp; " +
 		"<input class='history-button' type='image' src='/images/clock.png' title='History'/> &nbsp; &nbsp; " +
-		"<input class='remove-button' type='image' src='/images/notification_remove.png' title='Remove'/></p>" +
-		'</div></form></div></td></tr>';
+		"<input class='remove-button' type='image' src='/images/notification_remove.png' title='Remove'/>";
+	if (v.merge_with)
+		form += "&nbsp;&nbsp;<input class='merge-button' type='image' src='/images/load_download.png' title='Merge with " +
+		v.merge_with + "'/>";
+	form += '</p></div></form></div></td></tr>';
 	var $form = $(form);
 	$form.find("div.edit-header").hide();
 	$form.find(".network-description").val(v.descr);
