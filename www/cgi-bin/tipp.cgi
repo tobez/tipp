@@ -15,7 +15,7 @@ use Net::Netmask;
 use Regexp::Common 'net';
 use Net::DNS;
 
-our $VERSION = "2009062001";
+our $VERSION = "2009101401";
 our $what   = param("what")   || "root";
 our $id     = param("id")     || 0;
 
@@ -331,6 +331,99 @@ sub handle_edit_net
 		return { error => "Cannot update network information" };
 	}
 	$dbh->commit;
+	$new_net->{descr} = u2p($new_net->{descr});
+	$new_net->{msg} = $msg;
+	$new_net->{created_by} ||= "";
+	gen_calculated_params($new_net);
+	return $new_net;
+}
+
+sub handle_merge_net
+{
+	my $dbh = connect_db();
+
+	my $merge_with = param("merge_with");
+	return { error => "merge_with parameter is required" }
+		unless $merge_with;
+
+	my $net0 = db_fetch { my $n : networks;  $n->id == $id;  $n->invalidated == 0; };
+	return { error => "No such network (maybe someone else changed it?)" }
+		unless $net0;
+
+	my $net1 = db_fetch { my $n : networks;  $n->net == $merge_with;  $n->invalidated == 0; };
+	return { error => "No neighbouring network (maybe someone else changed it?)" }
+		unless $net1;
+	
+	my $n0 = Net::Netmask->new2($net0->{net});
+	my $n1 = Net::Netmask->new2($net1->{net});
+	my $super = Net::Netmask->new2($n0->base . "/" . ($n0->bits - 1));
+	if ($super->base ne $n0->base) {
+		($net0,$net1) = ($net1,$net0);
+		($n0,$n1)     = ($n1,$n0);
+	}
+
+	return { error => "$n0 and $n1 belong to different classes, cannot merge" }
+		unless $net0->{class_id} == $net1->{class_id};
+
+	$net0->{descr} = u2p($net0->{descr});
+	$net1->{descr} = u2p($net1->{descr});
+	$net0->{descr} =~ s/^\s*\[merge\]\s+//;
+	$net1->{descr} =~ s/^\s*\[merge\]\s+//;
+	my $descr;
+	if ($net0->{descr} eq $net1->{descr}) {
+		$descr = "[merge] $net0->{descr}";
+	} else {
+		$descr = "[merge] $net0->{descr} | $net1->{descr}";
+	}
+
+	my $when = time;
+	my $who = remote_user();
+	db_insert 'networks', {
+		id			=> sql("nextval('networks_id_seq')"),
+		net			=> "$super",
+		class_id	=> $net0->{class_id},
+		descr		=> $descr,
+		created		=> $when,
+		invalidated	=> 0,
+		created_by	=> $who,
+	};
+
+	db_update {
+		my $n : networks;
+		$n->invalidated == 0;
+		$n->id == $net0->{id} || $n->id == $net1->{id};
+
+		$n->invalidated = $when;
+		$n->invalidated_by = $who;
+	};
+	my $nn = "$super";
+	log_change(network => "Removed network $n0 (it was merged with $n1 into $nn)", when => $when);
+	log_change(network => "Removed network $n1 (it was merged with $n0 into $nn)", when => $when);
+
+	my $new_net = db_fetch {
+		my $cr : classes_ranges;
+		my $n : networks;
+		my $c : classes;
+		$n->net == $nn;
+		$n->invalidated == 0;
+		inet_contains($cr->net, $n->net);
+		$c->id == $n->class_id;
+		sort $n->net;
+		return ($n->id, $n->net,
+			$n->class_id, class_name => $c->name,
+			$n->descr, $n->created, $n->created_by,
+			parent_class_id => $cr->class_id,
+			wrong_class => ($n->class_id != $cr->class_id));
+	};
+	unless ($new_net) {
+		$dbh->rollback;
+		return { error => "Cannot merge networks in the database" };
+	}
+
+	log_change(network => "Added network $nn (via merge of $n0 and $n1)", when => $when);
+	$dbh->commit;
+	my $msg = "Networks $n0 and $n1 successfully merged into $nn";
+
 	$new_net->{descr} = u2p($new_net->{descr});
 	$new_net->{msg} = $msg;
 	$new_net->{created_by} ||= "";

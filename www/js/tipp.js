@@ -8,7 +8,7 @@ var _LINKIFY;
 function init()
 {
 	_URL = "/cgi-bin/tipp.cgi";
-	_VER = "2009062001";
+	_VER = "2009101401";
 	_CHANGELOG_PAGE_SIZE = 30;
 
 	message("The status of the latest update is shown here");
@@ -897,6 +897,7 @@ function add_address_link($li)
 				var $pages = gen_address_pages(v, res);
 				$pages.find("div.address-list").hide();
 				$li.after($pages);
+				$li.data("$pages", $pages);
 				$pages.find("div.address-list").slideDown("fast");
 				remove_address_link($li, $pages);
 			});
@@ -947,6 +948,7 @@ function edit_network($li, ev)
 	$form.find("div.edit-header").slideDown("fast", function () {
 		$form.find(".network-description").focus().select();
 	});
+	$li.data("$form", $form);
 	var remove_form = function(e2) {
 		e2.preventDefault();
 		e2.stopPropagation();
@@ -959,6 +961,7 @@ function edit_network($li, ev)
 	$form.find(".ok-button").click(function (e) { submit_edit_network(e, $li, $form); });
 	$form.find(".history-button").click(function(e) { show_network_history(e, $form.find("div.network-edit"), $li.data("@net").net, true); });
 	$form.find(".remove-button").click(function(e) { submit_remove_network(e, $li, $form); });
+	$form.find(".merge-button").click(function(e) { submit_merge_network(e, $li, $form); });
 }
 
 function gen_class_input(selected_id)
@@ -1522,6 +1525,44 @@ function submit_edit_network(e, $ni, $form)
 		$tab.find('tr.network').removeClass('alt-row');
 		$tab.find('tr.network:nth-child(even)').addClass('alt-row');
 		$new_ni.effect("highlight", {}, 3000);
+	});
+}
+
+function submit_merge_network(e, $ni, $form)
+{
+	e.preventDefault();
+	e.stopPropagation();
+	var v = $ni.data("@net");
+	if (!v.merge_with)
+		return carp("Merge error", "Don't know what networks to merge");
+
+	var msg = "<p>Network <strong>" + v.net + "</strong> will be merged with " +
+		"<strong>" + v.merge_with + "</strong></p>" +
+		"<p>Are you sure you want to proceed?</p>";
+	ask(msg, function () {
+		remote({
+			what:		"merge-net",
+			id:			v.id,
+			merge_with:	v.merge_with
+		}, function (res) {
+			message(res.msg);
+			var $new_ni = insert_network(res);
+			$form.remove();
+			var $pages = $ni.data("$pages");
+			if ($pages) $pages.remove();
+			$ni.replaceWith($new_ni);
+			var $tab = $new_ni.closest("table.networks");
+			$tab.find('tr.network').removeClass('alt-row');
+			$tab.find('tr.network:nth-child(even)').addClass('alt-row');
+			var $another = $tab.find('a.address-link:contains(' + v.merge_with + ')').closest('tr.network');
+			if ($another.length > 0) {
+				var $af = $another.data("$form");
+				if ($af) $af.remove();
+				var $ap = $another.data("$pages");
+				if ($ap) $ap.remove();
+			}
+			$new_ni.effect("highlight", {}, 3000);
+		});
 	});
 }
 
