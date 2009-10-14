@@ -1560,6 +1560,7 @@ function submit_merge_network(e, $ni, $form)
 				if ($af) $af.remove();
 				var $ap = $another.data("$pages");
 				if ($ap) $ap.remove();
+				$another.remove();
 			}
 			$new_ni.effect("highlight", {}, 3000);
 		});
