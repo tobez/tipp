@@ -1234,6 +1234,7 @@ sub gen_calculated_params
 	$c->{second}       = $n->nth(1);
 	$c->{next_to_last} = $n->nth(-2);
 	$c->{sz}           = $n->size;
+	$c->{bits}         = $n->bits;
 	if ($c->{net} =~ /^10\.|^172\.|^192\.168\./) {
 		if ($c->{net} =~ /^10\./) {
 			$c->{private} = 1;

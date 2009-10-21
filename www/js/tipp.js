@@ -5,6 +5,7 @@ var _statusbar;
 var _status_area;
 var _SERVER_CAPS;
 var _LINKIFY;
+var _BIGFREE;
 function init()
 {
 	_URL = "/cgi-bin/tipp.cgi";
@@ -142,6 +143,7 @@ function net_view()
 
 function stat_view()
 {
+	_BIGFREE = [];
 	remote({what: "top-level-nets"}, function (res) {
 		var $div = $("<div class='linklist' id='main-content'></div>");
 		$div.append($("<h2>IP Usage Statistics (network based)</h2>"));
@@ -164,6 +166,24 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
             free  : all_total - all_used,
             usage : (100 * all_used / all_total).toFixed(1) + "%"
 		}));
+
+		$div.append($("<h2>Big free public space</h2>"));
+		var $table = $("<table class='networks'><tr><th>Size</th><th>Free nets</th></tr></table>");
+		for (var k = 0; k < 24; k++) {
+			if (_BIGFREE[k]) {
+				$table.append(
+					$("<tr class='network'><td class='network'>" +
+					k + "</td><td class='ip'>" +
+					_BIGFREE[k].length + "</td></tr>"));
+				for (var j = 0; j < _BIGFREE[k].length; j++) {
+					$table.append(
+						$("<tr class='network'><td class='network'></td><td class='ip'>" +
+						_BIGFREE[k][j] + "</td></tr>"));
+				}
+			}
+		}
+		$table.find('tr.network:nth-child(even)').addClass('alt-row');
+		$div.append($table);
 	} else {
 		remote({what: "net", id: null, limit: res[i], free: true},
 		function (nets) {
@@ -175,6 +195,10 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
 				var net = nets[k];
 				if (net.free == 1) {
 					ip_free += net.sz;
+					if (!net.private && net.bits < 24) { // a bit arbitrary
+						if (!_BIGFREE[net.bits]) _BIGFREE[net.bits] = [];
+						_BIGFREE[net.bits].push(net.net);
+					}
 				} else {
 					ip_used += net.sz;
 					if (!net.private)	all_used += net.sz;
