@@ -8,7 +8,7 @@ var _LINKIFY;
 var _BIGFREE;
 function init()
 {
-	_URL = "/cgi-bin/tipp.cgi";
+	_URL = "cgi-bin/tipp.cgi";
 	_VER = "2009101401";
 	_CHANGELOG_PAGE_SIZE = 30;
 
@@ -469,8 +469,8 @@ function add_network($where)
 			'<tr><td class="label">Description:</td><td>' +
 			'<input type="text" size="64" maxlength="256" class="network-description"/>' +
 			'</td></tr></table><p>' +
-			"<input class='ok-button' type='image' src='/images/notification_done.png' title='Save'/> " +
-			"<input class='cancel-button' type='image' src='/images/notification_error.png' title='Cancel'/></p>" +
+			"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
+			"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/></p>" +
 			'</div></form></div>';
 		var $form = $(form);
 		var $insert = $form;
@@ -599,8 +599,8 @@ function add_class_range()
 			'<input type="text" size="64" maxlength="256" class="class-range-description"/>' +
 			'</td></tr>' +
 			'</table><p>' +
-			"<input class='ok-button' type='image' src='/images/notification_done.png' title='Save'/> " +
-			"<input class='cancel-button' type='image' src='/images/notification_error.png' title='Cancel'/>" +
+			"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
+			"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/>" +
 			"</p>" +
 			'</div></form></div>';
 		var $form = $(form);
@@ -766,8 +766,8 @@ function edit_class_range($li)
 		gen_class_input(v.class_id) + '</td></tr><tr><td class="label">Description:</td><td>' +
 		'<input type="text" size="64" maxlength="256" class="class-range-description"/>' +
 		'</td></tr></table><p>' +
-		"<input class='ok-button' type='image' src='/images/notification_done.png' title='Save'/> " +
-		"<input class='cancel-button' type='image' src='/images/notification_error.png' title='Cancel'/>" +
+		"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
+		"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/>" +
 		"</p>" +
 		'</div></form></div>';
 	var $form = $(form);
@@ -956,12 +956,12 @@ function edit_network($li, ev)
 		gen_class_input(v.class_id) + '</td></tr><tr><td class="label">Description:</td><td>' +
 		'<input type="text" size="64" maxlength="256" class="network-description"/>' +
 		'</td></tr></table><p>' +
-		"<input class='ok-button' type='image' src='/images/notification_done.png' title='Save'/> " +
-		"<input class='cancel-button' type='image' src='/images/notification_error.png' title='Cancel'/> &nbsp; &nbsp; " +
-		"<input class='history-button' type='image' src='/images/clock.png' title='History'/> &nbsp; &nbsp; " +
-		"<input class='remove-button' type='image' src='/images/notification_remove.png' title='Remove'/>";
+		"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
+		"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/> &nbsp; &nbsp; " +
+		"<input class='history-button' type='image' src='images/clock.png' title='History'/> &nbsp; &nbsp; " +
+		"<input class='remove-button' type='image' src='images/notification_remove.png' title='Remove'/>";
 	if (v.merge_with)
-		form += "&nbsp;&nbsp;<input class='merge-button' type='image' src='/images/load_download.png' title='Merge with " +
+		form += "&nbsp;&nbsp;<input class='merge-button' type='image' src='images/load_download.png' title='Merge with " +
 		v.merge_with + "'/>";
 	form += '</p></div></form></div></td></tr>';
 	var $form = $(form);
@@ -1107,9 +1107,9 @@ function add_edit_range($pages, ni)
 			'<textarea rows=6 cols=64 class="ip-comments"></textarea></td></tr>' +
 			'</table>' +
 			'<p>' +
-			"<input class='ok-button' type='image' src='/images/notification_done.png' title='Save'/> " +
-			"<input class='cancel-button' type='image' src='/images/notification_error.png' title='Cancel'/> &nbsp; &nbsp; " +
-			"<input class='remove-button' type='image' src='/images/notification_remove.png' title='Remove'/></p>" +
+			"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
+			"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/> &nbsp; &nbsp; " +
+			"<input class='remove-button' type='image' src='images/notification_remove.png' title='Remove'/></p>" +
 			'</div>' +
 			'</form></div>');
 		$form.hide();
