@@ -146,7 +146,7 @@ function stat_view()
 	_BIGFREE = [];
 	remote({what: "top-level-nets"}, function (res) {
 		var $div = $("<div class='linklist' id='main-content'></div>");
-		$div.append($("<h2>IP Usage Statistics (network based)</h2>"));
+		$div.append($("<h2>IPv4 Usage Statistics (network based)</h2>"));
 		var $table = $("<table class='networks'><tr><th>Supernet</th><th>Total IPs</th><th>Used IPs</th><th>Free IPs</th></tr></table>");
 		$div.append($table);
 		$("#view").append($div);
@@ -167,7 +167,7 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
             usage : (100 * all_used / all_total).toFixed(1) + "%"
 		}));
 
-		$div.append($("<h2>Big free public space</h2>"));
+		$div.append($("<h2>Big IPv4 free public space</h2>"));
 		var $table = $("<table class='networks'><tr><th>Size</th><th>Free nets</th></tr></table>");
 		for (var k = 0; k < 24; k++) {
 			if (_BIGFREE[k]) {
@@ -193,32 +193,36 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
 			var ip_free  = 0;
 			for (var k = 0; k < n_nets; k++) {
 				var net = nets[k];
-				if (net.free == 1) {
-					ip_free += net.sz;
-					if (!net.private && net.bits < 24) { // a bit arbitrary
-						if (!_BIGFREE[net.bits]) _BIGFREE[net.bits] = [];
-						_BIGFREE[net.bits].push(net.net);
+				if (net.f == 4) {
+					if (net.free == 1) {
+						ip_free += net.sz;
+						if (!net.private && net.bits < 24) { // a bit arbitrary
+							if (!_BIGFREE[net.bits]) _BIGFREE[net.bits] = [];
+							_BIGFREE[net.bits].push(net.net);
+						}
+					} else {
+						ip_used += net.sz;
+						if (!net.private)	all_used += net.sz;
 					}
-				} else {
-					ip_used += net.sz;
-					if (!net.private)	all_used += net.sz;
+					ip_total += net.sz;
+					if (!net.private)	all_total += net.sz;
 				}
-				ip_total += net.sz;
-				if (!net.private)	all_total += net.sz;
 			}
-			var $tr = $("<tr class='network'><td class='network'>" + res[i] + "</td><td class='ip'>" +
-				ip_total + "</td><td class='ip'>" +
-				ip_used + "</td><td class='ip'>" +
-				ip_free + "</td></tr>");
-			if (net.private)
-				$tr.find(".network").addClass('noteworthy').tooltip({ 
-					cssClass: "tooltip",
-					xOffset:  10,
-					yOffset:  30,
-					content:  '<a href="http://tools.ietf.org/html/rfc1918">RFC1918</a> range'
-				});
-			$table.append($tr);
-			$table.find('tr.network:nth-child(even)').addClass('alt-row');
+			if (ip_total) {
+				var $tr = $("<tr class='network'><td class='network'>" + res[i] + "</td><td class='ip'>" +
+					ip_total + "</td><td class='ip'>" +
+					ip_used + "</td><td class='ip'>" +
+					ip_free + "</td></tr>");
+				if (net.private)
+					$tr.find(".network").addClass('noteworthy').tooltip({ 
+						cssClass: "tooltip",
+						xOffset:  10,
+						yOffset:  30,
+						content:  '<a href="http://tools.ietf.org/html/rfc1918">RFC1918</a> range'
+					});
+				$table.append($tr);
+				$table.find('tr.network:nth-child(even)').addClass('alt-row');
+			}
 			add_stat_line($div, $table, res, i+1, n, all_total, all_used);
 		});
 	}
@@ -678,13 +682,18 @@ function add_class_link($el, class_id)
 			var n = res.length;
 			for (var i = 0; i < n; i++) {
 				var v = res[i];
+				var free_space = v.addresses;
+				if (v.f == 6)
+					free_space = (100 * (new Number(v.addresses) / (new Number(v.addresses) + new Number(v.used)))).toFixed(1) + "%";
 				var $li = $("<li class='class-range'>" +
 					"<div>" +
-					"<a href='#' class='show-net without-free td-like' style='width: 11em;'>" + 
+					// XXX this fixed width is unsatisfactory for IPv6
+					// XXX maybe this <li> should be table-like
+					"<a href='#' class='show-net without-free td-like' style='width: 14em;'>" +
 					'<span class="form-icon ui-icon ui-icon-carat-1-e"></span>' +
 					v.net + "</a>" +
 					"<span class='netinfo td-like' style='width: 7em;'> " +
-					"<a href='#' class='show-net with-free'>" + v.addresses + " free</a>" +
+					"<a href='#' class='show-net with-free'>" + free_space + " free</a>" +
 					"</span>" +
 					'<span class="buttons td-like">' + button_icon("edit-range", "document", "Edit range") +
 					(v.addresses == 0 ? "" :
