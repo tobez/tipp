@@ -391,6 +391,8 @@ function format_change(v)
 	var t = v.change;
 	if (v.what == 'N') {
 		t = t.replace(/(\d+\.\d+\.\d+\.\d+\/\d+)/, "<a class='net-history' href='#'>$1</a>");
+		t = t.replace(/([\da-fA-F]+(:[\da-fA-F]+){7}\/\d+)/, "<a class='net-history' href='#'>$1</a>");
+		t = t.replace(/([\da-fA-F]+(:[\da-fA-F]+)*::\/\d+)/, "<a class='net-history' href='#'>$1</a>");
 	} else if (v.what == 'I') {
 		t = t.replace(/(\d+\.\d+\.\d+\.\d+)/, "<a class='ip-history' href='#'>$1</a>");
 	}
