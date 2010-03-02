@@ -176,9 +176,17 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
 					k + "</td><td class='ip'>" +
 					_BIGFREE[k].length + "</td></tr>"));
 				for (var j = 0; j < _BIGFREE[k].length; j++) {
-					$table.append(
-						$("<tr class='network'><td class='network'></td><td class='ip'>" +
-						_BIGFREE[k][j] + "</td></tr>"));
+					var $tr = $("<tr class='network'><td class='network'></td><td class='ip'>" +
+						"<div class='class-range'>" +
+						"<a href='#' class='allocate'>" +
+						_BIGFREE[k][j].net +
+						"</a>" +
+						"<span class='extras-here'></span>" +
+						"</div>" +
+						"</td></tr>");
+					$table.append($tr);
+					$tr.data("@net", _BIGFREE[k][j]);
+					class_range_net_link($tr);
 				}
 			}
 		}
@@ -198,7 +206,7 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
 						ip_free += net.sz;
 						if (!net.private && net.bits < 24) { // a bit arbitrary
 							if (!_BIGFREE[net.bits]) _BIGFREE[net.bits] = [];
-							_BIGFREE[net.bits].push(net.net);
+							_BIGFREE[net.bits].push(net);
 						}
 					} else {
 						ip_used += net.sz;
