@@ -9,7 +9,7 @@ var _BIGFREE;
 function init()
 {
 	_URL = "cgi-bin/tipp.cgi";
-	_VER = "2009101401";
+	_VER = "2010030201";
 	_CHANGELOG_PAGE_SIZE = 30;
 
 	message("The status of the latest update is shown here");
