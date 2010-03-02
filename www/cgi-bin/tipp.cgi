@@ -683,7 +683,7 @@ sub handle_addresses
 	my @ip;
 	my $n = N($net);
 	if ($n->version == 4) {
-		for my $ipn ($n->hostenum) {
+		for my $ipn ($n->network, $n->hostenum, $n->broadcast) {
 			my $ip = $ipn->addr;
 			if ($ip{$ip}) {
 				push @ip, $ip{$ip};
@@ -980,21 +980,21 @@ sub handle_split
 	};
 	return {error => "network to split not found"} unless $nf;
 	my $net = $nf->{net};
-	my $n = Net::Netmask->new2($net);
+	my $n = N($net);
 	return {error => "invalid network to split"} unless $n;
 	my $sz;
 	for my $sz0 (reverse (8..32)) {
 		$sz = $sz0;
-		my $sp = Net::Netmask->new2("$ip/$sz");
+		my $sp = N("$ip/$sz");
 		last unless $sp;
-		last unless $sp->broadcast eq $ip;
-		last if $sz < $n->bits;
+		last unless $sp->broadcast->addr eq $ip;
+		last if $sz < $n->masklen;
 	}
 	return {error => "unable to find split point [sz $sz]"} if $sz >= 32;
 	$sz++;
 	my $extra_msg = $sz >= 31 ? "The split will have networks of size $sz - this looks like a mistake" : "";
-	my $sn = Net::Netmask->new2("$ip/$sz");
-	my @n = $n->cidrs2inverse($sn);
+	my $sn = N("$ip/$sz")->network;
+	my @n = calculate_gaps($n, $sn);
 	@n = sort { $a cmp $b } (@n, $sn);
 	if (param("confirmed")) {
 		my $when = time;
@@ -1012,7 +1012,7 @@ sub handle_split
 				created_by	=> $who,
 			};
 			log_change(network => "Added network $nn (via split)", when => $when);
-			my $ip_network   = "" . $nn->base;
+			my $ip_network   = $nn->network->addr;
 			unless (db_fetch { my $i : ips; $i->ip == $ip_network; $i->invalidated == 0; return $i->id; }) {
 				my $id = db_fetch { return `nextval('ips_id_seq')`; };
 				db_insert 'ips', {
@@ -1025,7 +1025,7 @@ sub handle_split
 				};
 				log_change(ip => "Recorded IP $ip_network as a subnet address (via split)", when => $when);
 			}
-			my $ip_broadcast = "" . $nn->broadcast;
+			my $ip_broadcast = $nn->broadcast->addr;
 			unless (db_fetch { my $i : ips; $i->ip == $ip_broadcast; $i->invalidated == 0; return $i->id; }) {
 				my $id = db_fetch { return `nextval('ips_id_seq')`; };
 				db_insert 'ips', {
