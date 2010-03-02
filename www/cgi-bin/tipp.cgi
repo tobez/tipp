@@ -77,12 +77,21 @@ sub handle_class
 			used => sum(2**(2**(family($n->net)+1)-masklen($n->net))),
 			f => family($cr->net);
 	};
+	my $misclassified = db_fetch {
+		my $cr : classes_ranges;
+		my $n : networks;
+		$cr->class_id != $id;
+		$n->class_id == $id;
+		inet_contains($cr->net, $n->net);
+		return count($n->id);
+	};
 	for my $c (@c) {
 		$c->{net} =~ /\/(\d+)/;
 		$c->{used} ||= 0;
 		$c->{addresses} = 2**(2**($c->{f}+1)-$1) - $c->{used};
 		$c->{descr} = u2p($c->{descr}||"");
 	}
+	push @c, { misclassified => $misclassified, class_id => $id } if $misclassified;
 	return \@c;
 }
 

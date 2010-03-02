@@ -685,6 +685,14 @@ function add_class_link($el, class_id)
 			for (var i = 0; i < n; i++) {
 				var v = res[i];
 				var free_space = v.addresses;
+				if (v.misclassified) {
+					var $li = snippet("misclassified-class-range", {
+						misclassified : v.misclassified
+					});
+					$ul.append($li);
+					$li.data("@net", v);
+					continue;
+				}
 				if (v.f == 6)
 					free_space = (100 * (new Number(v.addresses) / (new Number(v.addresses) + new Number(v.used)))).toFixed(1) + "%";
 				var $li = $("<li class='class-range'>" +
