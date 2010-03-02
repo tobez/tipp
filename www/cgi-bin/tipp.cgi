@@ -355,10 +355,10 @@ sub handle_merge_net
 	return { error => "No neighbouring network (maybe someone else changed it?)" }
 		unless $net1;
 	
-	my $n0 = Net::Netmask->new2($net0->{net});
-	my $n1 = Net::Netmask->new2($net1->{net});
-	my $super = Net::Netmask->new2($n0->base . "/" . ($n0->bits - 1));
-	if ($super->base ne $n0->base) {
+	my $n0 = N($net0->{net});
+	my $n1 = N($net1->{net});
+	my $super = N($n0->network->addr . "/" . ($n0->masklen - 1))->network;
+	if ($super->network->addr ne $n0->network->addr) {
 		($net0,$net1) = ($net1,$net0);
 		($n0,$n1)     = ($n1,$n0);
 	}
