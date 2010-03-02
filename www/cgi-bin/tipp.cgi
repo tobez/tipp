@@ -11,8 +11,8 @@ use JSON::XS;
 use DBI;
 use DBIx::Perlish;
 use Encode;
-use Net::Netmask;
 use NetAddr::IP;
+use Net::Netmask;
 use Regexp::Common 'net';
 use Net::DNS;
 
@@ -90,11 +90,11 @@ sub handle_class
 sub handle_top_level_nets
 {
 	my $dbh = connect_db();
-	my @c = map { NetAddr::IP->new($_) } db_fetch {
+	my @c = map { N($_) } db_fetch {
 		my $t : classes_ranges;
 		return $t->net;
 	};
-	my @r = map { $_->short . "/" . $_->masklen } NetAddr::IP::Compact(@c);
+	my @r = map { "$_" } NetAddr::IP::Compact(@c);
 	return \@r;
 }
 
@@ -137,9 +137,9 @@ sub handle_net
 		};
 		return {error => "Cannot find class_range"} unless @r;
 		my @miss = calculate_gaps($limit ? $limit : $r[0]->{net}, map { $_->{net} } @c);
-		for (@c) { $_->{nn} = NetAddr::IP->new($_->{net}) }
+		for (@c) { $_->{nn} = N($_->{net}) }
 		for my $r (@r) {
-			$r->{nn} = NetAddr::IP->new($r->{net});
+			$r->{nn} = N($r->{net});
 		}
 		my @m;
 		for my $c (@miss) {
@@ -159,13 +159,13 @@ sub handle_net
 		$c{$c->{net}} = $c unless $c->{free};
 	}
 	for my $c (@c) {
-		my $this = NetAddr::IP->new($c->{net});
-		my $super = NetAddr::IP->new($this->network->addr . "/" . ($this->masklen - 1));
+		my $this = N($c->{net});
+		my $super = N($this->network->addr . "/" . ($this->masklen - 1));
 		my $neighbour;
 		if ($super->network->addr eq $this->network->addr) {
-			$neighbour = NetAddr::IP->new($super->broadcast->addr . "/" . $this->masklen)->network;
+			$neighbour = N($super->broadcast->addr . "/" . $this->masklen)->network;
 		} else {
-			$neighbour = NetAddr::IP->new($super->network->addr . "/" . $this->masklen);
+			$neighbour = N($super->network->addr . "/" . $this->masklen);
 		}
 		my $merge_with = $c{$neighbour};
 		if ($merge_with && $merge_with->{class_id} == $c->{class_id}) {
@@ -191,13 +191,13 @@ sub handle_new_network
 	return { error => "Network must be specified" } unless $net;
 	return { error => "Network class must be specified" } unless $class_id;
 	return { error => "Network description must be specified" } unless $descr;
-	my $nn = NetAddr::IP->new($net);
+	my $nn = N($net);
 	return { error => "Bad network specification" } unless $nn;
 	$nn = $nn->network;
 	$net = "$nn";
 
 	if ($limit) {
-		my $n_limit = NetAddr::IP->new($limit);
+		my $n_limit = N($limit);
 		return {error=>"Invalid network limit"} unless $n_limit;
 		$limit = "$n_limit";
 		return {error=>"Network is not within $limit"} unless $n_limit->contains($nn);
@@ -905,7 +905,7 @@ sub handle_suggest_network
 	my (%cr, @all);
 	my $dbh = connect_db();
 	if ($limit) {
-		my $n_limit = NetAddr::IP->new($limit);
+		my $n_limit = N($limit);
 		return {error=>"Invalid network limit"} unless $n_limit;
 		$limit = "$n_limit";
 		@all = map { { range => $limit, net => $_ } } db_fetch {
@@ -934,12 +934,12 @@ sub handle_suggest_network
 	for my $b (@all) {
 		$cr{$b->{range}} ||= [];
 		next unless $b->{net};
-		my $n = NetAddr::IP->new($b->{net});
+		my $n = N($b->{net});
 		push @{$cr{$b->{range}}}, $n if $n;
 	}
 	my %sz;
 	for my $r (keys %cr) {
-		my $b = NetAddr::IP->new($r);
+		my $b = N($r);
 		if (@{$cr{$r}}) {
 			my @miss = calculate_gaps($r, @{$cr{$r}});
 			for my $m (@miss) {
@@ -1229,8 +1229,8 @@ sub handle_describe_ip
 sub gen_calculated_params
 {
 	my $c = shift;
-	my $n = NetAddr::IP->new($c->{net});
-	$c->{net} = $n->short . "/" . $n->masklen;
+	my $n = N($c->{net});
+	$c->{net}          = "$n";
 	$c->{first}        = $n->network->addr;
 	$c->{last}         = $n->broadcast->addr;
 	$c->{second}       = $n->first->addr;
@@ -1448,16 +1448,16 @@ sub connect_db
 sub calculate_gaps
 {
 	my ($outer, @inner) = @_;
-	my $out = NetAddr::IP->new($outer);
+	my $out = N($outer);
 	my $len = $out->masklen();
 	my $of = $out->network;
 	my $ol = $out->broadcast;
-	my @in = sort map { NetAddr::IP->new($_) } @inner;
+	my @in = sort map { N($_) } @inner;
 	my @r;
 	for my $in (@in) {
 		last unless $of;  # XXX the whole outer range exhausted, no need to continue
-		my $if = NetAddr::IP->new($in->network->addr . "/$len");
-		my $il = NetAddr::IP->new($in->broadcast->addr . "/$len");
+		my $if = N($in->network->addr . "/$len");
+		my $il = N($in->broadcast->addr . "/$len");
 		if ($if < $of) {
 			next;  # XXX the current inner is below outer range, skipping
 		} elsif ($if == $of) {
@@ -1477,14 +1477,23 @@ sub calculate_gaps
 		my ($f, $l) = @$r;
 		my $len = $f->masklen;
 		while ($f < $l) {
-			while ($f->network < $f || $f->broadcast > NetAddr::IP->new($l->addr . "/" . $f->masklen)) {
-				$f = NetAddr::IP->new($f->addr . "/" . ($f->masklen + 1));
+			while ($f->network < $f || $f->broadcast > N($l->addr . "/" . $f->masklen)) {
+				$f = N($f->addr . "/" . ($f->masklen + 1));
 			}
 			push @n, $f;
-			$f = NetAddr::IP->new($f->broadcast->addr . "/$len");
+			$f = N($f->broadcast->addr . "/$len");
 			last if $f->addr eq $l->addr;
 			$f++;
 		}
 	}
 	@n;
 }
+
+sub N { TIPP::NetAddr::IP->new(@_) }
+
+package TIPP::NetAddr::IP;
+use NetAddr::IP;
+use base 'NetAddr::IP';
+use overload '""' => sub { $_[0]->version == 4 ? $_[0]->cidr : $_[0]->short . "/" . $_[0]->masklen };
+
+1;
