@@ -12,7 +12,6 @@ use DBI;
 use DBIx::Perlish;
 use Encode;
 use NetAddr::IP;
-use Net::Netmask;
 use Regexp::Common 'net';
 use Net::DNS;
 
@@ -1166,19 +1165,22 @@ sub handle_paginate
 {
 	my $nn = param("net");
 	return { error => "Network must be specified" } unless $nn;
-	my $n = Net::Netmask->new2($nn);
+	my $n = N($nn);
 	return { error => "Invalid network: $nn" } unless $n;
-	if ($n->size <= 64) {
-		my $l = $n->broadcast; $l =~ s/.*\.//;
-		return [{base=>$n->base,last=>$l,bits=>$n->bits}];
-	} else {
-		my @r;
-		for my $ip ($n->enumerate(26)) {
-			my $i = Net::Netmask->new2("$ip/26");
-			my $l = $i->broadcast; $l =~ s/.*\.//;
-			push @r, {base=>$ip,last=>$l,bits=>26};
+	if ($n->version == 4) {
+		if ($n->masklen >= 26) {
+			my $l = $n->broadcast->addr; $l =~ s/.*\.//;
+			return [{base=>$n->network->addr,last=>$l,bits=>$n->masklen}];
+		} else {
+			my @r;
+			for my $ip ($n->split(26)) {
+				my $l = $ip->broadcast->addr; $l =~ s/.*\.//;
+				push @r, {base=>$ip->network->addr,last=>$l,bits=>26};
+			}
+			return \@r;
 		}
-		return \@r;
+	} else {
+		return [];
 	}
 }
 
