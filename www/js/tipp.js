@@ -625,7 +625,7 @@ function add_class_range()
 			var $descr = $form.find(".class-range-description");
 			var $cl = $form.find(".network-class");
 
-			if (!$range.val().match(/^(\d+\.\d+\.\d+\.\d+\/\d+)$/)) {
+			if (!is_net_ok($range.val())) {
 				$range.effect("bounce", {direction: "left"});
 				return carp("Invalid class range", $range);
 			}
@@ -1714,6 +1714,18 @@ function date_format(epoch, msg)
 	if (min < 10) min = "0" + min;
 
 	return y + "-" + m + "-" + day + " " + h + ":" + min;
+}
+
+function is_net_ok(net)
+{
+	if (net.match(/^(\d+\.\d+\.\d+\.\d+\/\d+)$/)) {
+		return true;
+	} else if (net.match(/^([\da-fA-F]+(:[\da-fA-F]+){7}\/\d+)$/)) {
+		return true;
+	} else if (net.match(/^([\da-fA-F]+(:[\da-fA-F]+)*::\/\d+)$/)) {
+		return true;
+	}
+	return false;
 }
 
 function inline_alert(msg)

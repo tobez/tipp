@@ -488,11 +488,9 @@ sub handle_add_class_range
 	my $class_id = param("class_id");
 	my $descr    = u2p(param("descr"));
 	my $net = param("range")||"";
-	return { error => "Bad class range specification" }
-		unless $net =~ /^$RE{net}{IPv4}\/(\d+)$/ && $1 <= 32;
-	my $nn = Net::Netmask->new2($net);
-	$net = "$nn";
+	my $nn = N($net);
 	return { error => "Bad class range specification" } unless $nn;
+	$net = "$nn";
 
 	my $cid = db_fetch {
 		my $c : classes;
@@ -501,8 +499,8 @@ sub handle_add_class_range
 	};
 	return { error => "Non-existing network class" } unless $cid;
 
-	my $first = $nn->first;
-	my $last  = $nn->last;
+	my $first = $nn->network;
+	my $last  = $nn->broadcast;
 	my $over = db_fetch {
 		my $cr : classes_ranges;
 		inet_contains($cr->net, $net) or
@@ -534,7 +532,9 @@ sub handle_add_class_range
 			$n->invalidated == 0;
 		};
 
-		return $cr->id,$cr->net,$cr->class_id,$cr->descr,used => sum(2**(32-masklen($n->net)));
+		return $cr->id,$cr->net,$cr->class_id,$cr->descr,
+			used => sum(2**(2**(family($n->net)+1)-masklen($n->net))),
+			f => family($cr->net);
 	};
 	unless ($new_range) {
 		$dbh->rollback;
@@ -545,7 +545,7 @@ sub handle_add_class_range
 	$new_range->{msg} = $msg;
 	$new_range->{net} =~ /\/(\d+)/;
 	$new_range->{used} ||= 0;
-	$new_range->{addresses} = 2**(32-$1) - $new_range->{used};
+	$new_range->{addresses} = 2**(2**($new_range->{f}+1)-$1) - $new_range->{used};
 	return $new_range;
 }
 
