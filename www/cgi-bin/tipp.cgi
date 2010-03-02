@@ -680,13 +680,20 @@ sub handle_addresses
 		}
 		$ip{$ip->{ip}} = $ip;
 	}
-	my $n = Net::Netmask->new2($net);
 	my @ip;
-	for my $ip ($n->enumerate) {
-		if ($ip{$ip}) {
-			push @ip, $ip{$ip};
-		} else {
-			push @ip, { ip => $ip, descr => "" };
+	my $n = N($net);
+	if ($n->version == 4) {
+		for my $ipn ($n->hostenum) {
+			my $ip = $ipn->addr;
+			if ($ip{$ip}) {
+				push @ip, $ip{$ip};
+			} else {
+				push @ip, { ip => $ip, descr => "" };
+			}
+		}
+	} else {
+		for my $ip (sort %ip) {
+			push @ip, $ip;
 		}
 	}
 	return \@ip;
