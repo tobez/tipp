@@ -176,11 +176,10 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
 					k + "</td><td class='ip'>" +
 					_BIGFREE[k].length + "</td></tr>"));
 				for (var j = 0; j < _BIGFREE[k].length; j++) {
-					var $tr = $("<tr class='network'><td class='network'></td><td class='ip'>" +
+					var $tr = $("<tr class='network class-range'><td class='network'></td><td class='ip'>" +
 						"<div class='class-range'>" +
-						"<a href='#' class='allocate'>" +
 						_BIGFREE[k][j].net +
-						"</a>" +
+						button_icon("allocate", "plus", "Allocate network in this range") +
 						"<span class='extras-here'></span>" +
 						"</div>" +
 						"</td></tr>");
