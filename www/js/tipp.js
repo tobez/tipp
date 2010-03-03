@@ -134,7 +134,7 @@ function net_view()
 				'<span class="form-icon ui-icon ui-icon-carat-1-e"></span>' +
 				v + "</a></li>");
 			$ul.append($li);
-			add_net_link($li, null, v);
+			add_net_link($li, { class_range_id: null, limit: v });
 		}
 		$("#view").append($div);
 		$div.slideDown("fast");
@@ -699,6 +699,7 @@ function add_class_link($el, class_id)
 					});
 					$ul.append($li);
 					$li.data("@net", v);
+					add_net_link($li, { misclassified: v.misclassified, class_id: v.class_id });
 					continue;
 				}
 				if (v.f == 6)
@@ -729,7 +730,7 @@ function add_class_link($el, class_id)
 				class_range_remove_link($li);
 				if (v.addresses > 0)
 					$li.find("a.with-free").addClass("has-free-space");
-				add_net_link($li, v.id);
+				add_net_link($li, { class_range_id: v.id });
 			}
 			$el.parent().append($div);
 			$div.slideDown("fast");
@@ -844,14 +845,20 @@ function remove_class_link($el, class_id)
 	});
 }
 
-function add_net_link($li, class_range_id, limit)
+function add_net_link($li, p)
 {
 	var $all_a = $li.find("a.show-net");
 	var $main_a = $li.find("a.show-net.without-free");
 	$all_a.unbind("click");
 	$all_a.click(function(ev) {
 		clear_selection();
-		remote({what: "net", id: class_range_id, limit: limit, free: $(ev.target).closest(".with-free").length > 0},
+		remote({what: "net",
+			id:            p.class_range_id,
+			limit:         p.limit,
+			free:          $(ev.target).closest(".with-free").length > 0,
+			misclassified: p.misclassified,
+			class_id:      p.class_id
+		},
 		function (res) {
 			$main_a.find("span.ui-icon").removeClass("ui-icon-carat-1-e");
 			$main_a.find("span.ui-icon").addClass("ui-icon-carat-1-n");
@@ -865,7 +872,7 @@ function add_net_link($li, class_range_id, limit)
 			$tab.find('tr.network:nth-child(even)').addClass('alt-row');
 			$main_a.closest("li").append($div);
 			$div.slideDown("fast");
-			remove_net_link($li, class_range_id, limit);
+			remove_net_link($li, p);
 		});
 		ev.preventDefault();
 		ev.stopPropagation();
@@ -911,7 +918,7 @@ function insert_network(v)
 	return $ni;
 }
 
-function remove_net_link($li, class_range_id, limit)
+function remove_net_link($li, p)
 {
 	var $all_a = $li.find("a.show-net");
 	var $main_a = $li.find("a.show-net.without-free");
@@ -923,7 +930,7 @@ function remove_net_link($li, class_range_id, limit)
 		ev.preventDefault();
 		ev.stopPropagation();
 		clear_selection();
-		add_net_link($li, class_range_id, limit);
+		add_net_link($li, p);
 	});
 }
 

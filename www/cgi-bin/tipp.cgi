@@ -82,6 +82,7 @@ sub handle_class
 		my $n : networks;
 		$cr->class_id != $id;
 		$n->class_id == $id;
+		$n->invalidated == 0;
 		inet_contains($cr->net, $n->net);
 		return count($n->id);
 	};
@@ -109,58 +110,80 @@ sub handle_top_level_nets
 sub handle_net
 {
 	my %p = @_;
-	my $free = param("free") || "";
-	$free = "" if $free eq "false";
+
+	my $free = jsparam("free");
 	$free = $p{free} if exists $p{free};
-	my $limit = param("limit") || "";
-	$limit = "" if $limit eq "false";
-	$limit = "" if $limit eq "undefined";
+	my $limit = jsparam("limit");
 	$limit = $p{limit} if exists $p{limit};
+	my $misclassified = jsparam("misclassified");
+	my $class_id = jsparam("class_id");
+
 	my $dbh = connect_db();
-	my @c = db_fetch {
-		my $cr : classes_ranges;
-		my $n : networks;
-		my $c : classes;
-		$cr->id == $id unless $limit;
-		inet_contains($limit, $n->net) if $limit;
-		inet_contains($cr->net, $n->net);
-		$n->invalidated == 0;
-		$c->id == $n->class_id;
-		sort $n->net;
-		return ($n->id, $n->net,
-			$n->class_id, class_name => $c->name,
-			$n->descr, $n->created, $n->created_by,
-			parent_class_id => $cr->class_id,
-			parent_range_id => $cr->id,
-			wrong_class => ($n->class_id != $cr->class_id));
-	};
-	if ($free) {
-		my @r = db_fetch {
+	my @c;
+	if ($misclassified) {
+		@c = db_fetch {
 			my $cr : classes_ranges;
+			my $n : networks;
+			my $c : classes;
+			$cr->class_id != $class_id;
+			$n->class_id == $class_id;
+			$n->invalidated == 0;
+			inet_contains($cr->net, $n->net);
+			$c->id == $n->class_id;
+			sort $n->net;
+			return ($n->id, $n->net,
+				$n->class_id, class_name => $c->name,
+				$n->descr, $n->created, $n->created_by,
+				parent_class_id => $cr->class_id,
+				parent_range_id => $cr->id,
+				wrong_class => ($n->class_id != $cr->class_id));
+		};
+	} else {
+		@c = db_fetch {
+			my $cr : classes_ranges;
+			my $n : networks;
 			my $c : classes;
 			$cr->id == $id unless $limit;
-			inet_contains($limit, $cr->net) || inet_contains($cr->net, $limit) if $limit;
-			$cr->class_id == $c->id;
-			return $cr->net, $cr->class_id, $cr->descr, class_name => $c->name;
+			inet_contains($limit, $n->net) if $limit;
+			inet_contains($cr->net, $n->net);
+			$n->invalidated == 0;
+			$c->id == $n->class_id;
+			sort $n->net;
+			return ($n->id, $n->net,
+				$n->class_id, class_name => $c->name,
+				$n->descr, $n->created, $n->created_by,
+				parent_class_id => $cr->class_id,
+				parent_range_id => $cr->id,
+				wrong_class => ($n->class_id != $cr->class_id));
 		};
-		return {error => "Cannot find class_range"} unless @r;
-		my @miss = calculate_gaps($limit ? $limit : $r[0]->{net}, map { $_->{net} } @c);
-		for (@c) { $_->{nn} = N($_->{net}) }
-		for my $r (@r) {
-			$r->{nn} = N($r->{net});
-		}
-		my @m;
-		for my $c (@miss) {
-			my $cid = 0;
+		if ($free) {
+			my @r = db_fetch {
+				my $cr : classes_ranges;
+				my $c : classes;
+				$cr->id == $id unless $limit;
+				inet_contains($limit, $cr->net) || inet_contains($cr->net, $limit) if $limit;
+				$cr->class_id == $c->id;
+				return $cr->net, $cr->class_id, $cr->descr, class_name => $c->name;
+			};
+			return {error => "Cannot find class_range"} unless @r;
+			my @miss = calculate_gaps($limit ? $limit : $r[0]->{net}, map { $_->{net} } @c);
+			for (@c) { $_->{nn} = N($_->{net}) }
 			for my $r (@r) {
-				if ($r->{nn}->contains($c)) {
-					$cid = $r->{class_id};
-					last;
-				}
+				$r->{nn} = N($r->{net});
 			}
-			push @m, { net => "$c", nn => $c, free => 1, id => 0, class_name => "free", class_id => $cid };
+			my @m;
+			for my $c (@miss) {
+				my $cid = 0;
+				for my $r (@r) {
+					if ($r->{nn}->contains($c)) {
+						$cid = $r->{class_id};
+						last;
+					}
+				}
+				push @m, { net => "$c", nn => $c, free => 1, id => 0, class_name => "free", class_id => $cid };
+			}
+			@c = sort { $a->{nn} cmp $b->{nn} } (@c, @m);
 		}
-		@c = sort { $a->{nn} cmp $b->{nn} } (@c, @m);
 	}
 	my %c;
 	for my $c (@c) {
@@ -1440,6 +1463,14 @@ sub json_header
 }
 
 sub u2p { decode("utf-8", shift) }
+
+sub jsparam
+{
+	my $v = param($_[0]) || "";
+	$v = "" if $v eq "false";
+	$v = "" if $v eq "undefined";
+	$v;
+}
 
 sub init
 {
