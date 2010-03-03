@@ -247,8 +247,8 @@ sub handle_new_network
 		return $cr->id;
 	};
 	return { error => "Network $net is outside of any known range" } unless $crid;
-	my $first = $nn->first;
-	my $last  = $nn->last;
+	my $first = $nn->first->addr;
+	my $last  = $nn->last->addr;
 	my $over = db_fetch {
 		my $n : networks;
 		$n->invalidated == 0;
@@ -530,8 +530,8 @@ sub handle_add_class_range
 	};
 	return { error => "Non-existing network class" } unless $cid;
 
-	my $first = $nn->network;
-	my $last  = $nn->broadcast;
+	my $first = $nn->network->addr;
+	my $last  = $nn->broadcast->addr;
 	my $over = db_fetch {
 		my $cr : classes_ranges;
 		inet_contains($cr->net, $net) or
