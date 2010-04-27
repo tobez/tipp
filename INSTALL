@@ -1,0 +1,122 @@
+1. Satisfy dependencies.  Only direct dependencies are listed -
+   some of them might have dependencies of their own.
+   I have not verified what are the minimal versions of
+   various Perl modules that are required, but I suspect that
+   in many cases the most recent versions are not required,
+   just reasonably recent ones.  When in doubt, err on the
+   side of using the most recent ones.
+
+   - perl 5.8.2 or later
+   - DBI (http://search.cpan.org/dist/DBI/)
+   - DBD::Pg (http://search.cpan.org/dist/DBD-Pg/)
+   - DBIx::Perlish (http://search.cpan.org/dist/DBIx-Perlish/)
+   - JSON::XS (http://search.cpan.org/dist/JSON-XS/)
+   - Net::DNS (http://search.cpan.org/dist/Net-DNS/)
+   - NetAddr::IP (http://search.cpan.org/dist/NetAddr-IP/)
+   - Regexp::Common (http://search.cpan.org/dist/Regexp-Common/)
+
+   - CGI::SpeedyCGI (http://daemoninc.com/SpeedyCGI/) is recommended,
+     but not required
+
+   - some webserver that can do CGI scripts;  apache works fine
+
+2. TIPP requires PostgreSQL.  The server can be remote, decide for yourself.
+   Again, a reasonably recent version is needed.  In particular, avoid 7.X -
+   but probably any 8.X.Y will do.
+
+3. Create database user and database itself for tipp.  They can have any
+   names, in the following examples the username will be "tippuser" and
+   the database will be "tippdb".  If something does not work, you
+   will have to consult PostgreSQL documentation and modify the invocations
+   according to your local setup:
+
+   $ su - pgsql
+   # createuser tippuser
+     answer "n" for superuser question
+     answer "y" for create databases question
+     answer "n" for create new roles question
+   # createdb -U tippuser tippdb
+   If wanted/required, assign a password to the tippuser user.
+   If needed, edit ~pgsql/data/pg_hba.conf to allow tippuser to connect
+   to tippdb from your webserver host with an appropriate access method,
+   then restart PostgreSQL server.
+
+   Check that you can connect with given credentials:
+
+   $ psql -h databasehost -U tippuser tippdb
+   If you get psql prompt without errors, all is golden.
+
+   Create TIPP schema:
+
+   $ psql -h databasehost -U tippuser tippdb </path/to/tipp/sources/sql/tipp.sql
+
+   Add network categories you are planning to use to the database
+   (currently you cannot create them via the web interface).
+   An example can be found in /path/to/tipp/sources/sql/categories.sql.
+
+4. Copy web stuff.
+
+   Let's suppose that TIPP will be located in the directory $TIPPDIR -
+   substitute a real directory everywhere you see $TIPPDIR in the following.
+   Let's suppose that TIPP sources are located in the directory $TIPPSRC.
+
+   $ mkdir $TIPPDIR
+   $ cd $TIPPSRC/www
+   $ cp -R * $TIPPDIR
+
+5. Modify TIPP.pm
+
+   $ vi $TIPPDIR/cgi-bin/TIPP.pm
+
+   Set $db_name, $db_host, $db_user, and $db_pass to reflect
+   your installation.
+
+   Optionally set $timezone to reflect your timezone,
+   as understood by PostgreSQL.  See
+   http://www.postgresql.org/docs/8.0/static/datetime-keywords.html#DATETIME-TIMEZONE-INPUT-TABLE
+   for recognized time zones.
+
+6. If not using CGI::SpeedyCGI, modify $TIPPDIR/cgi-bin/tipp.cgi's shebang line
+   to be #! /usr/bin/perl or whatever your perl is.
+
+   If *using* CGI::SpeedyCGI, you might still need to modify
+   $TIPPDIR/cgi-bin/tipp.cgi to reflect the location of the "speedy" binary.
+
+7. Setup web server
+
+   You will need the whole $TIPPDIR to correspond to a single "webdir",
+   so the relative paths remain the same.
+
+   You will need to set cgi-bin/tipp.cgi to be a CGI script.
+
+   You will need to make sure that cgi-bin/TIPP.pm cannot be accessed.
+
+   You will need to set up your own authentication scheme (for now).
+
+   Example for Apache 1.3, assuming TIPP will occupy its own virtual host:
+
+	<VirtualHost *>
+		ServerAdmin webmaster@domain.name
+		DocumentRoot $TIPPDIR
+		ServerName tipp.domain.name
+		ErrorLog /var/log/httpd-error-tipp.domain.name.log
+		CustomLog /var/log/httpd-access-tipp.domain.name.log combined
+		<Location />
+			 Order allow,deny
+			 AuthName "TIPP Access"
+			 AuthType Basic
+			 Require valid-user
+			 AuthUserFile "/some/path/htpasswd.users"
+			 Allow from all
+			 Satisfy all
+		</Location>
+		ScriptAlias /cgi-bin/ "$TIPPDIR/cgi-bin/"
+		<Location "/cgi-bin/">
+			Options +ExecCGI
+		</Location>
+	</VirtualHost>
+
+   Reload the webserver.  TIPP should be up and running.
+   Test by pointing your browser to http://tipp.domain.name/tipp.html
+   (assuming the previous example).
+
