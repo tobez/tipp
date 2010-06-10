@@ -30,6 +30,9 @@ Here is the list:
 jquery
 	http://jquery.com/
 	License: MIT/GPL
+jquery.cookies
+	http://code.google.com/p/cookies/
+	License: BSD/MIT/GPL
 jquery-ui
 	http://jqueryui.com/
 	License: MIT/GPL
