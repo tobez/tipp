@@ -39,9 +39,9 @@ jquery-ui
 jquery.tooltip.js
 	http://www.socialembedded.com/labs/jQuery-Tooltip-Plugin/jQuery-Tooltip-Plugin.html
 	License: MIT/GPL
-pure
-	http://beebole.com/pure/
-	License: MIT
+picosnippet()
+	http://www.tobez.org/picosnippet/
+	License: BSD
 
 
 LICENSE AND COPYRIGHT
