@@ -1,5 +1,5 @@
 /*!
- * picosnippet v1.1
+ * picosnippet v1.2
  * http://www.tobez.org/picosnippet/
  *
  * Copyright 2010, Anton Berezin
@@ -18,10 +18,12 @@ function picosnippet(template, d)
 		- do compound subtitution if d is an object (= hash)
 	*/
 	var subst = function(e,v) {
+		var content_changed = false;
 		if (v instanceof Object) {
 			for (a in v) {
 				if (a == "text") {
 					e.innerHTML = v[a];
+					content_changed = true;
 				} else {
 					e.setAttribute(a, v[a]);
 				}
@@ -30,7 +32,9 @@ function picosnippet(template, d)
 			e.value = v;
 		} else {
 			e.innerHTML = v;
+			content_changed = true;
 		}
+		return content_changed;
 	};
 	var result = template.cloneNode(false);
 	// in IE 7.0, one cannot delete el.id... :-/
@@ -69,10 +73,10 @@ function picosnippet(template, d)
 					t.parentNode.insertBefore(rr[j], t);  // XXX parent node might not be there
 				}
 				t.parentNode.removeChild(t);
+				untouched = false;
 			} else {
-				subst(t,d[cln]);
+				untouched = !subst(t,d[cln]);
 			}
-			untouched = false;
 			break;
 		}
 		if (untouched) {

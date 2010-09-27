@@ -543,3 +543,16 @@ li.class-range span.description {
 	padding: 0;
 }
 
+ul.connectedSortable {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	float: left;
+	margin-right: 10px;
+}
+
+ul.connectedSortable li {
+	margin: 0 3px 3px 3px;
+	padding: 5px; font-size: 80%;
+	width: 140px;
+}

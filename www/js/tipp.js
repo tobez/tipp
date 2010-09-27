@@ -9,7 +9,7 @@ var _BIGFREE;
 function init()
 {
 	_URL = "cgi-bin/tipp.cgi";
-	_VER = "2010030201";
+	_VER = "2010092701";
 	_CHANGELOG_PAGE_SIZE = 30;
 
 	message("The status of the latest update is shown here");
@@ -334,7 +334,7 @@ function possibly_full_search(what, msg)
 
 function view_changes()
 {
-	var $div = snippet("change-log-div");
+	var $div = snippet("change-log-div", {main:{id:"main-content"}});
 	$div.data("@page", 0);
 	$("#view").append($div);
 	$div.slideDown("fast", function () { $("#changelog-filter").focus(); });
@@ -718,6 +718,8 @@ function add_class_link($el, class_id)
 					' ' + button_icon("allocate", "plus", "Allocate network in this range")) +
 					(v.used != 0 ? "" :
 					' ' + button_icon("delete-range", "close", "Delete this range")) +
+					(v.used == 0 ? "" :
+					' ' + button_icon("export-csv", "disk", "Export CSV")) +
 					"</span>" +
 					'<span class="description td-like">' + v.descr +
 					"</span>" +
@@ -727,6 +729,7 @@ function add_class_link($el, class_id)
 				class_range_net_link($li);
 				class_range_edit_link($li);
 				class_range_remove_link($li);
+				add_export_csv($li, v, 1);
 				if (v.addresses > 0)
 					$li.find("a.with-free").addClass("has-free-space");
 				add_net_link($li, { class_range_id: v.id });
@@ -1075,6 +1078,8 @@ function gen_address_pages(ni, res)
 					buttons += button_icon("edit-range", "copy", "Edit range of IPs");
 				if (_SERVER_CAPS.edit_range_list)
 					buttons += button_icon("edit-range-list", "script", "Fill-in range of IPs from a list");
+				// if (_SERVER_CAPS.export_csv)
+					buttons += button_icon("export-csv", "disk", "Export CSV");
 				buttons += '</td>';
 				$tr.append($(buttons));
 			} else {
@@ -1088,6 +1093,7 @@ function gen_address_pages(ni, res)
 	add_split_mode_link($pages);
 	add_edit_range($pages, ni);
 	add_edit_range_list($pages, ni);
+	add_export_csv($pages, ni);
 	show_addresses($pages, res[0].base + "/" + res[0].bits, res[0].base + "-" + res[0].last);
 	return $pages;
 }
@@ -1188,6 +1194,103 @@ function add_edit_range_list($pages, ni)
 			$form.slideUp("fast", function () { $(this).remove() });
 		});
 		$form.find(".ok-button").click(function (e) { submit_edit_ip_range_list(e, $form); });
+	});
+}
+
+function add_export_csv($pages, ni, range)
+{
+	$pages.find(".export-csv").click(function (ev) {
+		clear_selection();
+		ev.preventDefault();
+		ev.stopPropagation();
+		export_csv_dialog(ni, range);
+	});
+}
+
+function export_csv_dialog(ni, range)
+{
+	var columns = {
+		C:	"Network class",
+		D:	"Network description",
+		H:	"Hostname/description",
+		N:	"Network",
+		d:	"Description",
+		h:	"Hostname",
+		i:	"IP Address",
+		l:	"Location",
+		o:	"Owner/responsible",
+		p:	"Phone",
+		B:	"Network base",
+		M:	"Network mask",
+		S:  "Network bits",
+		"3":"Network /bits"
+	};
+	var all = "iHhdpolNDCBMS3";
+	var reverse = {};
+	for (var c in columns) {
+		reverse[columns[c]] = c;
+	}
+	var ipexport = $.cookies.get("ipexport");
+	if (!ipexport)	ipexport = "iH";
+	if (ipexport.match(/[^CDHNdhilopBMS3]/)) // validate
+		ipexport = "iH";
+	var active = [];
+	var inactive = [];
+	var act = {};
+	var splitexport = ipexport.split("");
+	var splitall    = all.split("");
+	for (var c = 0; c < splitexport.length; c++) {
+		active[active.length] =
+			{name: columns[splitexport[c]]};
+		act[splitexport[c]] = true;
+	}
+	for (var c = 0; c < splitall.length; c++) {
+		if (act[splitall[c]])	continue;
+		inactive[inactive.length] = 
+			{name: columns[splitall[c]]};
+	}
+	var $dialog = snippet("export-csv-dialog", {
+		'export-csv-form': {title: "Export " + ni.net + " as CSV"},
+		active_columns: active,
+		inactive_columns: inactive,
+	});
+	var save_columns = function () {
+		var $els = $dialog.find("ul.included").find("li.name");
+		ipexport = "";
+		for (var i = 0; i < $els.length; i++) {
+			if (reverse[$($els[i]).text()])
+				ipexport += reverse[$($els[i]).text()];
+		}
+		var d = new Date();
+		d.setFullYear(d.getFullYear() + 2);
+		$.cookies.set("ipexport", ipexport, { expiresAt: d });
+	};
+	$dialog.find(".connectedSortable").sortable({
+		connectWith: ".connectedSortable",
+		items: 'li.name',
+		update: function (ev,ui) {
+			$dialog.find("ul.included").find("li.name").
+				addClass("ui-state-highlight").removeClass("ui-state-default");
+			$dialog.find("ul.excluded").find("li.name").
+				removeClass("ui-state-highlight").addClass("ui-state-default");
+			save_columns();
+		}
+	}).disableSelection();
+	var extra = "";
+	if (range) {
+		extra = "&range=1";
+	}
+	$dialog.dialog({
+		autoOpen:	true,
+		modal:		true,
+		width:		400,
+		buttons:	{
+			Ok: function () {
+				$(this).dialog('close');
+				var d = new Date();
+				window.open(_URL + "?ipexport=" + ni.id + extra + "&when=" + d.valueOf() , "ipexport" );
+			},
+			Cancel: function () { $(this).dialog('close'); }}
 	});
 }
 
@@ -1626,7 +1729,7 @@ function submit_merge_network(e, $ni, $form)
 
 function snippet(name, data)
 {
-	return $("#" + name).children().autoRender(data).clone();
+	return $(picosnippet($("#" + name).children().get(0), data));
 }
 
 function carp(err, $descr)

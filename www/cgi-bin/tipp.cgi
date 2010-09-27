@@ -14,13 +14,18 @@ use Encode;
 use NetAddr::IP;
 use Regexp::Common 'net';
 use Net::DNS;
+use Text::CSV_XS;
+use CGI::Cookie;
 
-our $VERSION = "2010030201";
+our $VERSION = "2010092701";
 our $what   = param("what")   || "root";
 our $id     = param("id")     || 0;
 
 init();
-if ((param("ver")||"") ne $VERSION) {
+if (param("ipexport")) {
+	$id = param("ipexport");
+	handle_ipexport();
+} elsif ((param("ver")||"") ne $VERSION) {
 	result({error => "WHOA! Client/server version mismatch, try to reload the page"});
 } elsif (my $handler = main->can("handle_$what")) {
 	my $r = eval { $handler->(); };
@@ -694,7 +699,7 @@ sub handle_net_history
 
 sub handle_addresses
 {
-	my $net = param("net") || return;
+	my $net = shift || param("net") || return;
 	my $dbh = connect_db();
 	my @dip = db_fetch {
 		my $ip : ips;
@@ -1265,6 +1270,34 @@ sub handle_describe_ip
 	return [@info,@net];
 }
 
+sub handle_ipexport
+{
+	my $r;
+	if (param("range")) {
+		$r = eval { do_ipexport_range($id); };
+	} else {
+		$r = eval { do_ipexport_net($id); };
+	}
+	if ($r && ref($r) && ref($r) eq "HASH" && !$r->{error}) {
+		print csv_header($r->{filename});
+		for (@{$r->{content}}) {
+			print "$_\n";
+		}
+	} else {
+		print html_header();
+		print "<html><head><title>IP Export Error</title></head>\n";
+		print "<body><h1>IP Export Error</h1><p>\n";
+		if ($r && $r->{error}) {
+			print "$r->{error}\n";
+		} elsif ($r) {
+			print "$r\n";
+		} else {
+			print "$@\n";
+		}
+		print "</p></body></html>\n";
+	}
+}
+
 # === END OF HANDLERS ===
 
 sub gen_calculated_params
@@ -1428,6 +1461,143 @@ sub search_ips
 	}
 }
 
+sub do_ipexport_range
+{
+	my $range_id = shift;
+	my $dbh = connect_db();
+	my $range_net = db_fetch {
+		my $cr : classes_ranges;
+		$cr->id == $range_id;
+		return $cr->net;
+	};
+	return { error => "No such class range" } unless $range_net;
+	my @nets = db_fetch {
+		my $cr : classes_ranges;
+		my $n : networks;
+		$n->invalidated == 0;
+		inet_contains($cr->net, $n->net);
+		$cr->id == $range_id;
+		sort $n->net;
+		return $n->id;
+	};
+	return { error => "No networks defined in $range_net" } unless @nets;
+
+	my @csv;
+	my $first = 1;
+	for my $net_id (@nets) {
+		my $r = do_ipexport_net($net_id);
+		if ($r && ref($r) && ref($r) eq "HASH" && !$r->{error}) {
+			my @c = @{$r->{content}};
+			shift @c unless $first;
+			$first = 0;
+			push @csv, @c;
+		} else {
+			return $r;
+		}
+	}
+	my $filename = $range_net;   $filename =~ s/\//-/g;
+	return {
+		filename => "$filename.csv",
+		content  => \@csv,
+	};
+}
+
+sub do_ipexport_net
+{
+	my $net_id = shift;
+
+	my $dbh = connect_db();
+	my $net = db_fetch {
+		my $n : networks;
+		my $c : classes;
+		$n->id == $net_id;
+		$n->class_id == $c->id;
+		$n->invalidated == 0;
+		return $n, class_name => $c->name;
+	};
+	return { error => "No such network (maybe someone else changed it?)" }
+		unless $net;
+	$net->{nn} = N($net->{net});
+	$net->{base} = $net->{nn}->network->addr;
+	$net->{mask} = $net->{nn}->mask;
+	$net->{bits} = $net->{nn}->masklen;
+	$net->{sbits} = "/" . $net->{nn}->masklen;
+	my $ips = handle_addresses($net->{net});
+	my %cookies = CGI::Cookie->fetch;
+	my $format = $cookies{ipexport};
+	$format = $format ? $format->value : "iH";
+
+	my %header = (
+		C => "Network class",
+		D => "Network description",
+		H => "Hostname/description",
+		N => "Network",
+		d => "Description",
+		h => "Hostname",
+		i => "IP Address",
+		l => "Location",
+		o => "Owner/responsible",
+		p => "Phone",
+		B => "Network base",
+		M => "Network mask",
+		S => "Network bits",
+		3 => "Network /bits",
+	);
+	my %ip_map = (
+		d => "descr",
+		h => "hostname",
+		i => "ip",
+		l => "location",
+		o => "owner",
+		p => "phone",
+	);
+	my %net_map = (
+		C => "class_name",
+		D => "descr",
+		N => "net",
+		B => "base",
+		M => "mask",
+		S => "bits",
+		3 => "sbits",
+	);
+	my @f = split //, $format;
+	my $csv = Text::CSV_XS->new ({ binary => 1 }) or die "Cannot use CSV: " . Text::CSV->error_diag();
+	my @csv;
+
+	my @v = map { $header{$_} } @f;
+	$csv->combine(@v);
+	push @csv, $csv->string;
+
+	for my $ip (@$ips) {
+		@v = ();
+		for my $f (@f) {
+			if ($f eq "H") {
+				if ($ip->{hostname} && $ip->{descr}) {
+					push @v, "$ip->{hostname}: $ip->{descr}";
+				} elsif ($ip->{hostname}) {
+					push @v, $ip->{hostname};
+				} else {
+					push @v, $ip->{descr} || "";
+				}
+			} elsif ($ip_map{$f}) {
+				push @v, $ip->{$ip_map{$f}} || "";
+			} elsif ($net_map{$f}) {
+				push @v, $net->{$net_map{$f}} || "";
+			} else {
+				die "Internal error finding out what field $f means\n";
+			}
+		}
+		$csv->combine(@v);
+		push @csv, $csv->string;
+	}
+
+	my $filename = $net->{net};   $filename =~ s/\//-/g;
+	return {
+		filename => "$filename.csv",
+		content  => \@csv,
+	};
+}
+
 sub log_change
 {
 	my ($what, $change, %p) = @_;
@@ -1459,6 +1629,28 @@ sub json_header
 		-expires => "-1d",
 		-Pragma  => "no-cache",
 		-charset => "utf-8",
+	);
+}
+
+sub html_header
+{
+	header(
+		-type    => "text/html",
+		-expires => "-1d",
+		-Pragma  => "no-cache",
+		-charset => "utf-8",
+	);
+}
+
+sub csv_header
+{
+	my $filename = shift;
+	header(
+		-type    => "text/csv",
+		-expires => "-1d",
+		-Pragma  => "no-cache",
+		-charset => "utf-8",
+		-content_disposition => "attachment;filename=$filename",
 	);
 }
 

@@ -1,3 +1,28 @@
+Only relatively big changes are shown in this file.
+For the complete history of changes, see commit logs
+on github.
+
+Mon Sep 27 13:04:51 CEST 2010
+	Add support for exporting networks and ranges as CSV
+
+Fri Jun 25 10:17:14 2010 +0200
+	Replace pure2 templating with picosnippet templating.
+
+Tue Apr 27 15:19:12 2010 +0200
+	INSTALL document
+
+Wed Mar 3 00:44:05 2010 +0100
+	Can create new networks from a big free public space report.
+
+Wed Mar 3 00:17:06 2010 +0100
+	Easily see misclassified nets in a class.
+
+Tue Mar 2 16:50:53 2010 +0100
+	Initial support for IPv6 networks
+
+Wed Oct 21 17:26:45 2009 +0200
+	Add a big free public space reporting.
+
 Wed Oct 14 14:21:22 CEST 2009
 	Add an ability to merge adjacent networks into one.
 

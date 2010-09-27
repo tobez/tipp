@@ -1,7 +1,7 @@
 1. Satisfy dependencies.  Only direct dependencies are listed -
    some of them might have dependencies of their own.
    I have not verified what are the minimal versions of
-   various Perl modules that are required, but I suspect that
+   various Perl modules that are needed, but I suspect that
    in many cases the most recent versions are not required,
    just reasonably recent ones.  When in doubt, err on the
    side of using the most recent ones.
@@ -9,11 +9,13 @@
    - perl 5.8.2 or later
    - DBI (http://search.cpan.org/dist/DBI/)
    - DBD::Pg (http://search.cpan.org/dist/DBD-Pg/)
+   - PadWalker (http://search.cpan.org/dist/PadWalker/)
    - DBIx::Perlish (http://search.cpan.org/dist/DBIx-Perlish/)
    - JSON::XS (http://search.cpan.org/dist/JSON-XS/)
    - Net::DNS (http://search.cpan.org/dist/Net-DNS/)
    - NetAddr::IP (http://search.cpan.org/dist/NetAddr-IP/)
    - Regexp::Common (http://search.cpan.org/dist/Regexp-Common/)
+   - Text::CSV_XS (http://search.cpan.org/dist/Text-CSV_XS/)
 
    - CGI::SpeedyCGI (http://daemoninc.com/SpeedyCGI/) is recommended,
      but not required
