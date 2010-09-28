@@ -953,14 +953,41 @@ function add_address_link($li)
 			no_click_action($el);
 			ev.preventDefault();
 			ev.stopPropagation();
-			remote({what: "paginate", net: v.net}, function (res) {
-				var $pages = gen_address_pages(v, res);
-				$pages.find("div.address-list").hide();
+			if (v.f == 6) {
+				var $pages = snippet("ipv6-address-list", {});
+/*
+	remote({what: "addresses", net: net}, function (res) {
+		var $new_div = $("<div class='addresses'><table class='addresses'></table></div>");
+		var n = res.length;
+		for (var i = 0; i < n; i++) {
+			var v = res[i];
+			var $tr = $("<tr class='ip-info'><td class='ip'><a class='ip' href='#'>" + v.ip +
+				"</a></td><td class='description'>" + ip_description(v) +
+				"</td></tr>");
+			$new_div.find("table").append($tr);
+		}
+		$new_div.find('tr:nth-child(even)').addClass('alt-row');
+		$div.replaceWith($new_div);
+		$pages.find("table.address-pages").find("td").removeClass("selected");
+		$pages.find("table.addresses").unbind("click").click(edit_ip);
+		$pages.find("a.address-range:contains('" + range + "')").parent().addClass("selected");
+		set_clip_mode($pages);
+	});
+*/
 				$li.after($pages);
 				$li.data("$pages", $pages);
 				$pages.find("div.address-list").slideDown("fast");
 				remove_address_link($li, $pages);
-			});
+			} else {
+				remote({what: "paginate", net: v.net}, function (res) {
+					var $pages = gen_address_pages(v, res);
+					$pages.find("div.address-list").hide();
+					$li.after($pages);
+					$li.data("$pages", $pages);
+					$pages.find("div.address-list").slideDown("fast");
+					remove_address_link($li, $pages);
+				});
+			}
 		});
 	}
 }
