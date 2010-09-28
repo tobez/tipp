@@ -1450,16 +1450,31 @@ sub search_ips
 			push @ip_sql, "i.ip <<= ?";
 			push @ip_bind, $t;
 		} else {
-			my @or = map { "$_ ilike ?" } qw(i.descr e.location e.phone e.owner e.hostname);
-			push @ip_bind, ("%$t%") x 5;
-			if ($t =~ /^(\d+)\.(\d+)$/ && $1 <= 255 && $2 <= 255) {
-				push @or, "text(i.ip) like ?";
-				push @ip_bind, "%$t/32";
-			} elsif ($t =~ /^(\d+)\.(\d+)\.(\d+)$/ && $1 <= 255 && $2 <= 255 && $3 <= 255) {
-				push @or, "text(i.ip) like ?";
-				push @ip_bind, "%$t/32";
+			my $nn = N($t);
+			my $already_looking;
+			if ($nn && $nn->version == 6) {
+				if ($nn->masklen == 128) {
+					$already_looking = 1;
+					push @ip_sql, "i.ip = ?";
+					push @ip_bind, $nn->ip;
+				} elsif (@s > 1) {
+					$already_looking = 1;
+					push @ip_sql, "i.ip <<= ?";
+					push @ip_bind, "$nn";
+				}
 			}
-			push @ip_sql, "(" . join(" or ", @or) . ")";
+			unless ($already_looking) {
+				my @or = map { "$_ ilike ?" } qw(i.descr e.location e.phone e.owner e.hostname);
+				push @ip_bind, ("%$t%") x 5;
+				if ($t =~ /^(\d+)\.(\d+)$/ && $1 <= 255 && $2 <= 255) {
+					push @or, "text(i.ip) like ?";
+					push @ip_bind, "%$t/32";
+				} elsif ($t =~ /^(\d+)\.(\d+)\.(\d+)$/ && $1 <= 255 && $2 <= 255 && $3 <= 255) {
+					push @or, "text(i.ip) like ?";
+					push @ip_bind, "%$t/32";
+				}
+				push @ip_sql, "(" . join(" or ", @or) . ")";
+			}
 		}
 	}
 	my $dbh = connect_db();
