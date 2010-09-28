@@ -11,7 +11,7 @@ use JSON::XS;
 use DBI;
 use DBIx::Perlish;
 use Encode;
-use NetAddr::IP;
+use NetAddr::IP ':lower';
 use Regexp::Common 'net';
 use Net::DNS;
 use Text::CSV_XS;
@@ -828,7 +828,9 @@ sub handle_edit_ip
 		$p{$p} = u2p($p{$p});
 	}
 	return {error => "IP must be specified"} unless $p{ip};
-	return {error => "invalid IP"} unless $p{ip} =~ /^$RE{net}{IPv4}$/;
+	my $ipn = N($p{ip});
+	return {error => "invalid IP"} unless $ipn;
+	$p{ip} = $ipn->ip;  # our canonical form
 
 	my $old = get_ip_info($p{ip});
 	my $changed = 0;
@@ -1739,5 +1741,10 @@ package TIPP::NetAddr::IP;
 use NetAddr::IP;
 use base 'NetAddr::IP';
 use overload '""' => sub { $_[0]->version == 4 ? $_[0]->cidr : $_[0]->short . "/" . $_[0]->masklen };
+
+sub ip
+{
+	$_[0]->version == 4 ? $_[0]->addr : $_[0]->short;
+}
 
 1;
