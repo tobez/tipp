@@ -719,8 +719,11 @@ sub handle_addresses
 	my @ip;
 	my $n = N($net);
 	if ($n->version == 4) {
+		my $last_ip = "";
 		for my $ipn ($n->network, $n->hostenum, $n->broadcast) {
 			my $ip = $ipn->addr;
+			next if $ip eq $last_ip;
+			$last_ip = $ip;
 			if ($ip{$ip}) {
 				push @ip, $ip{$ip};
 			} else {
