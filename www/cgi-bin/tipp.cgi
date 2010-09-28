@@ -1388,8 +1388,19 @@ sub search_networks
 			push @net_sql, "(n.net <<= ? or n.net >>= ?)";
 			push @net_bind, $t, $t;
 		} else {
-			push @net_sql, "n.descr ilike ?";
-			push @net_bind, "%$t%";
+			my $nn = N($t);
+			if ($nn && $nn->version == 6) {
+				if ($nn->masklen < 128) {
+					push @net_sql, "(n.net <<= ? or n.net >>= ?)";
+					push @net_bind, "$nn", "$nn";
+				} else {
+					push @net_sql, "(n.net >>= ?)";
+					push @net_bind, "$nn";
+				}
+			} else {
+				push @net_sql, "n.descr ilike ?";
+				push @net_bind, "%$t%";
+			}
 		}
 	}
 	my $dbh = connect_db();
