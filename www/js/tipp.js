@@ -1078,7 +1078,7 @@ function gen_address_pages(ni, res)
 					buttons += button_icon("edit-range", "copy", "Edit range of IPs");
 				if (_SERVER_CAPS.edit_range_list)
 					buttons += button_icon("edit-range-list", "script", "Fill-in range of IPs from a list");
-				// if (_SERVER_CAPS.export_csv)
+				if (_SERVER_CAPS.ipexport)
 					buttons += button_icon("export-csv", "disk", "Export CSV");
 				buttons += '</td>';
 				$tr.append($(buttons));
