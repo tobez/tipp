@@ -748,7 +748,9 @@ sub handle_ip_history
 {
 	my $ip = param("ip");
 	return {error => "IP must be specified"} unless $ip;
-	return {error => "invalid IP"} unless $ip =~ /^$RE{net}{IPv4}$/;
+	my $ipn = N($ip);
+	return {error => "invalid IP"} unless $ipn;
+	$ip = $ipn->ip;  # our canonical form
 
 	my $dbh = connect_db();
 	my @ip = db_fetch {
