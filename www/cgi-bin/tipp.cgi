@@ -1234,7 +1234,9 @@ sub handle_describe_ip
 {
 	my $ip = param("ip") || "";
 	return {error => "IP must be specified"} unless $ip;
-	return {error => "invalid IP address"} unless $ip =~ /^$RE{net}{IPv4}$/;
+	my $ipn = N($ip);
+	return {error => "invalid IP"} unless $ipn;
+	$ip = $ipn->ip;  # our canonical form
 
 	my $start = param("start") || "";
 	return {error => "start must be specified"} unless $start;
