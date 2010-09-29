@@ -955,6 +955,7 @@ function add_address_link($li)
 			ev.stopPropagation();
 			if (v.f == 6) {
 				var $pages = snippet("ipv6-address-list", {});
+				$pages.find('a.new').data("@net", v);
 /*
 	remote({what: "addresses", net: net}, function (res) {
 		var $new_div = $("<div class='addresses'><table class='addresses'></table></div>");
@@ -1501,32 +1502,56 @@ function edit_ip_main($t, $form_td)
 		$div.slideUp("fast", function () { $(this).remove() });
 	} else {
 		var ip = $t.text();
-		var $form = snippet('ip-edit-dialog', { ip : ip }).hide();
+		var new_allocation = $t.hasClass("new");
+		var net;
+		var within;
+		if (new_allocation) {
+			net = $t.data("@net");
+			ip = net.first;
+			within = net.net;
+		}
+		var $form = snippet(new_allocation ? 'ip-create-dialog' : 'ip-edit-dialog', { ip : ip, within: within }).hide();
 		$form.data("@ip", ip);
-		fetch_ip_info($form, ip);
+		if (!new_allocation) fetch_ip_info($form, ip);
 		$form_td.append($form);
 		$form.slideDown("fast", function () {
-			$form.find(".ip-description").focus().select();
+			if (new_allocation)
+				$form.find(".ip").focus().select();
+			else
+				$form.find(".ip-description").focus().select();
 		});
 		$form.find(".cancel-button").click(function (e) {
 			e.preventDefault();
 			e.stopPropagation();
 			$form.slideUp("fast", function () { $(this).remove() });
 		});
-		$form.find(".ok-button").click(function (e) { submit_edit_ip(e, $form); });
-		$form.find(".history-button").click(function(e) { show_ip_history(e, $form, $form.data("@ip"), true); });
-		$form.find(".remove-button").click(function(e) { submit_remove_ip(e, $form); });
+		$form.find(".ok-button").click(function (e) {
+			var ip = new_allocation ? $form.find(".ip").val() : $form.data("@ip");
+			$form.data("@ip", ip);
+			submit_edit_ip(e, $form, within);
+		});
+		$form.find(".history-button").click(function(e) {
+			var ip = new_allocation ? $form.find(".ip").val() : $form.data("@ip");
+			$form.data("@ip", ip);
+			show_ip_history(e, $form, $form.data("@ip"), true);
+		});
+		$form.find(".remove-button").click(function(e) {
+			var ip = new_allocation ? $form.find(".ip").val() : $form.data("@ip");
+			$form.data("@ip", ip);
+			submit_remove_ip(e, $form);
+		});
 		$form.find('.nslookup').click(function (ev) {
 			ev.preventDefault();
 			ev.stopPropagation();
-			remote({what: "nslookup", ip: $form.data("@ip")}, function (res) {
+			var ip = new_allocation ? $form.find(".ip").val() : $form.data("@ip");
+			remote({what: "nslookup", ip: ip}, function (res) {
 				$form.find(".ip-hostname").val(res.host).effect("highlight", {}, 2000);
 			});
 		});
 	}
 }
 
-function submit_edit_ip(e, $form)
+function submit_edit_ip(e, $form, containing_net)
 {
 	e.preventDefault();
 	e.stopPropagation();
@@ -1546,14 +1571,16 @@ function submit_edit_ip(e, $form)
 	var ip = $form.data("@ip");
 
 	remote({
-		what:		"edit-ip",
-		ip:			ip,
-		descr:		$descr.val(),
-		hostname:	$hostname.val(),
-		location:	$location.val(),
-		phone:		$phone.val(),
-		owner:		$owner.val(),
-		comments:	$comments.val()
+		what:			"edit-ip",
+		ip:				ip,
+		containing_net:	containing_net,
+		only_new:		containing_net, // do not overwrite old when allocating new
+		descr:			$descr.val(),
+		hostname:		$hostname.val(),
+		location:		$location.val(),
+		phone:			$phone.val(),
+		owner:			$owner.val(),
+		comments:		$comments.val()
 	}, function (res) {
 		message(res.msg);
 		var $tr = $form.closest("tr.ip-info");
@@ -1677,6 +1704,7 @@ function show_ip_history(e, $form, ip, with_fill_in, special_date)
 function fetch_ip_info($form, ip)
 {
 	remote({what: "get-ip", ip: ip}, function (v) {
+		$form.find(".ip").val(v.ip);
 		$form.find(".ip-description").val(v.descr);
 		$form.find(".ip-hostname").val(v.hostname);
 		$form.find(".ip-location").val(v.location);

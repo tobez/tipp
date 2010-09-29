@@ -741,6 +741,9 @@ sub handle_addresses
 sub handle_get_ip
 {
 	my $ip = param("ip");
+	my $ipn = N($ip);
+	return {error => "invalid IP"} unless $ipn;
+	$ip = $ipn->ip;  # our canonical form
 	return get_ip_info($ip);
 }
 
@@ -829,12 +832,26 @@ sub handle_edit_ip
 		$p{$p} = "" unless defined $p{$p};
 		$p{$p} = u2p($p{$p});
 	}
+	my $containing_net = jsparam("containing_net");
+	my $only_new = jsparam("only_new");
 	return {error => "IP must be specified"} unless $p{ip};
 	my $ipn = N($p{ip});
 	return {error => "invalid IP"} unless $ipn;
 	$p{ip} = $ipn->ip;  # our canonical form
 
+	if ($containing_net) {
+		my $net = N($containing_net);
+		return {error => "invalid containing network"} unless $net;
+		return {error => "The address is outside the network"}
+			unless $net->contains($ipn);
+		# XXX shall we also test that the network in question
+		# is present and not invalid?
+	}
+
 	my $old = get_ip_info($p{ip});
+	if ($old->{id} && $only_new) {
+		return {error => "This address is already allocated"};
+	}
 	my $changed = 0;
 	for my $p (qw(descr location phone owner hostname comments)) {
 		$changed = 1 if $old->{$p} ne $p{$p};
@@ -1316,10 +1333,10 @@ sub gen_calculated_params
 	my $c = shift;
 	my $n = N($c->{net});
 	$c->{net}          = "$n";
-	$c->{first}        = $n->network->addr;
-	$c->{last}         = $n->broadcast->addr;
-	$c->{second}       = $n->first->addr;
-	$c->{next_to_last} = $n->last->addr;
+	$c->{first}        = $n->network->ip;
+	$c->{last}         = $n->broadcast->ip;
+	$c->{second}       = $n->first->ip;
+	$c->{next_to_last} = $n->last->ip;
 	$c->{sz}           = 2**($n->bits-$n->masklen);
 	$c->{bits}         = $n->masklen;
 	$c->{f}            = $n->version;
