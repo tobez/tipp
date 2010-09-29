@@ -1428,7 +1428,7 @@ function set_clip_mode($pages)
 
 function show_addresses($pages, net, range)
 {
-	var $div = $pages.find(".addresses");
+	var $div = $pages.find("div.addresses");
 	remote({what: "addresses", net: net}, function (res) {
 		var $new_div = $("<div class='addresses'><table class='addresses'></table></div>");
 		var n = res.length;
