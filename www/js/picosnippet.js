@@ -36,12 +36,12 @@ function picosnippet(template, d)
 		}
 		return content_changed;
 	};
-	var result = template.cloneNode(false);
+	var result = template.cloneNode(true);
 	// in IE 7.0, one cannot delete el.id... :-/
-	result.id = null;
+	result.id = "";
 	var err;
 	try { delete result.id; } catch (err) { /* do nothing */ }
-	result.innerHTML = template.innerHTML;
+	// result.innerHTML = template.innerHTML;  - this is broken for <tr> in modern FF
 	var q = [result];
 	var i = 0;
 	while (i < q.length) {
@@ -80,9 +80,9 @@ function picosnippet(template, d)
 			break;
 		}
 		if (untouched) {
-			var chl = t.childNodes.length;
+			var chl = t.children.length;
 			for (var k = 0; k < chl; k++)
-				q[q.length] = t.childNodes[k];
+				q[q.length] = t.children[k];
 		}
 	}
 	return result;
