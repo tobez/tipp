@@ -954,31 +954,21 @@ function add_address_link($li)
 			ev.preventDefault();
 			ev.stopPropagation();
 			if (v.f == 6) {
-				var $pages = snippet("ipv6-address-list", {});
-				$pages.find('a.new').data("@net", v);
-/*
-	remote({what: "addresses", net: net}, function (res) {
-		var $new_div = $("<div class='addresses'><table class='addresses'></table></div>");
-		var n = res.length;
-		for (var i = 0; i < n; i++) {
-			var v = res[i];
-			var $tr = $("<tr class='ip-info'><td class='ip'><a class='ip' href='#'>" + v.ip +
-				"</a></td><td class='description'>" + ip_description(v) +
-				"</td></tr>");
-			$new_div.find("table").append($tr);
-		}
-		$new_div.find('tr:nth-child(even)').addClass('alt-row');
-		$div.replaceWith($new_div);
-		$pages.find("table.address-pages").find("td").removeClass("selected");
-		$pages.find("table.addresses").unbind("click").click(edit_ip);
-		$pages.find("a.address-range:contains('" + range + "')").parent().addClass("selected");
-		set_clip_mode($pages);
-	});
-*/
-				$li.after($pages);
-				$li.data("$pages", $pages);
-				$pages.find("div.address-list").slideDown("fast");
-				remove_address_link($li, $pages);
+				remote({what: "addresses", net: v.net}, function (ips) {
+					var n = ips.length;
+					for (var i = 0; i < n; i++) {
+						ips[i].description = ip_description(ips[i]);
+						ips[i].ip_address = ips[i].ip;
+						delete ips[i].ip;
+					}
+					var $pages = snippet("ipv6-address-list", { ips: ips });
+					$pages.find('a.new').data("@net", v);
+					$pages.find('tr.ip-info:nth-child(even)').addClass('alt-row');
+					$li.after($pages);
+					$li.data("$pages", $pages);
+					$pages.find("div.address-list").slideDown("fast");
+					remove_address_link($li, $pages);
+				});
 			} else {
 				remote({what: "paginate", net: v.net}, function (res) {
 					var $pages = gen_address_pages(v, res);
@@ -1280,7 +1270,7 @@ function export_csv_dialog(ni, range)
 	var $dialog = snippet("export-csv-dialog", {
 		'export-csv-form': {title: "Export " + ni.net + " as CSV"},
 		active_columns: active,
-		inactive_columns: inactive,
+		inactive_columns: inactive
 	});
 	var save_columns = function () {
 		var $els = $dialog.find("ul.included").find("li.name");
@@ -1583,13 +1573,23 @@ function submit_edit_ip(e, $form, containing_net)
 		comments:		$comments.val()
 	}, function (res) {
 		message(res.msg);
-		var $tr = $form.closest("tr.ip-info");
-		var $descr = $form.closest("td.description");
-		$form.slideUp("fast", function () {
-			$(this).remove();
-			$descr.html(ip_description(res));
-			$tr.effect("highlight", {}, 3000);
-		});
+		if (containing_net) {
+			var $newline = snippet("ipv6-address-line", { ip_address: res.ip, description: ip_description(res) });
+			var $tr = $form.closest("tr.ip-info");
+			$tr.after($newline);
+			$form.slideUp("fast", function () {
+				$(this).remove();
+				$newline.effect("highlight", {}, 3000);
+			});
+		} else {
+			var $tr = $form.closest("tr.ip-info");
+			var $descr = $form.closest("td.description");
+			$form.slideUp("fast", function () {
+				$(this).remove();
+				$descr.html(ip_description(res));
+				$tr.effect("highlight", {}, 3000);
+			});
+		}
 	});
 }
 
