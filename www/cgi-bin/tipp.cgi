@@ -731,8 +731,8 @@ sub handle_addresses
 			}
 		}
 	} else {
-		for my $ip (sort %ip) {
-			push @ip, $ip;
+		for my $ip (sort keys %ip) {
+			push @ip, $ip{$ip};
 		}
 	}
 	return \@ip;
