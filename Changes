@@ -2,6 +2,9 @@ Only relatively big changes are shown in this file.
 For the complete history of changes, see commit logs
 on github.
 
+Fri Oct  1 14:12:28 CEST 2010
+	Add basic support for IPv6 addresses
+
 Mon Sep 27 13:04:51 CEST 2010
 	Add support for exporting networks and ranges as CSV
 
