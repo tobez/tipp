@@ -966,6 +966,7 @@ function add_address_link($li)
 					$pages.find('tr.ip-info:nth-child(even)').addClass('alt-row');
 					$li.after($pages);
 					$li.data("$pages", $pages);
+					$pages.find("table.addresses").unbind("click").click(edit_ip);
 					$pages.find("div.address-list").slideDown("fast");
 					remove_address_link($li, $pages);
 				});
