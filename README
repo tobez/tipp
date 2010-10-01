@@ -8,13 +8,11 @@ BROWSER COMPATIBILITY
 ---------------------
 
 Any recent Firefox.  Any recent Opera.
-Any recent Safari.
+Any recent Safari.  Any recent Chrome.
 
-Not tested with Chrome.
-
-It sort of works with IE 6.0, but there is a number of kinks to be
-sorted out.  It definitely will not work at all with previous versions
-of IE.
+It sort of works with IE 7.0 and above, but there is a number of kinks
+to be sorted out. It definitely will not work at all with previous
+versions of IE.
 
 JAVASCRIPT LIBRARIES
 --------------------
