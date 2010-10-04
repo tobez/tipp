@@ -402,6 +402,7 @@ function format_change(v)
 		t = t.replace(/([\da-fA-F]+(:[\da-fA-F]+)*::\/\d+)/, "<a class='net-history' href='#'>$1</a>");
 	} else if (v.what == 'I') {
 		t = t.replace(/(\d+\.\d+\.\d+\.\d+)/, "<a class='ip-history' href='#'>$1</a>");
+		t = t.replace(/IP ([\da-fA-F]+:([:\da-fA-F]+)*)/, "IP <a class='ip-history' href='#'>$1</a>");
 	}
 	return t;
 }
