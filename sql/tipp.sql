@@ -57,3 +57,8 @@ create table changelog (
 	what	char(1), -- R = class range, N = network, I = ip
 	created	integer  -- unix time
 );
+
+create table network_tags (
+	net_id	integer,
+	tag		text
+);
