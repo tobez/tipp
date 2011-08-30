@@ -2,6 +2,9 @@ Only relatively big changes are shown in this file.
 For the complete history of changes, see commit logs
 on github.
 
+Tue Aug 30 15:11:27 CEST 2011
+	Add support for tags for networks.
+
 Fri Oct  1 14:12:28 CEST 2010
 	Add basic support for IPv6 addresses
 
