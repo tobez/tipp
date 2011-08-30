@@ -15,6 +15,7 @@
 <td><input id='search-button' name='search-button' type='image' src='images/search.png' title='Search' alt='Search'/></td>
 <td class="home-button"><input id='home-button' name='home-button' type='image' src='images/home.png' title='Browse' alt='Browse'/></td>
 <td><input id='net-view-button' name='net-view-button' type='image' src='images/net-view.png' title='Network view' alt='Network view'/></td>
+<td><input id='tag-view-button' name='tag-view-button' type='image' src='images/star_full.png' title='Tag view' alt='Tag view'/></td>
 <td><input id='add-button' name='add-button' type='image' src='images/notification_add.png' title='New network' alt='New network'/></td>
 <td><input id='changelog-button' name='changelog-button' type='image' src='images/document_search.png' title='View changelog' alt='View changelog'/></td>
 <td><input id='add-range-button' name='add-range-button' type='image' src='images/folder_add.png' title='Add class range' alt='Add class range'/></td>
@@ -275,6 +276,21 @@ information to export.
 <li class="inactive_columns name ui-state-default"></li>
 </ul>
 </div>
+</div>
+
+<div id="tags-summary">
+    <table class='tags-summary'>
+     <tr class='ip-info'>
+      <th>Tagname</th>
+      <th>Networks</th>
+      <th></th>
+     </tr>
+     <tr class='tags'>
+      <td><a class='tag' href='#'>Tag name</a></td>
+      <td class="cnt"><span class='cnt'>Networks count</span></td>
+      <td width="100%"><div class="network-list"></div></td>
+     </tr>
+    </table>
 </div>
 
 </div>

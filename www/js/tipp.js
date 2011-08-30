@@ -44,6 +44,13 @@ function init()
 		$("#main-content").remove();
 		net_view();
 	});
+	$('#tag-view-button').click(function (ev) {
+		ev.preventDefault();
+		ev.stopPropagation();
+		clear_selection();
+		$("#main-content").remove();
+		tag_view();
+	});
 	$('#add-button').click(function (ev) {
 		ev.preventDefault();
 		ev.stopPropagation();
@@ -139,6 +146,47 @@ function net_view()
 		$("#view").append($div);
 		$div.slideDown("fast");
 	});
+}
+
+function tag_view()
+{
+	remote({what: "tags-summary"}, function (res) {
+		var $div = $("<div class='linklist' id='main-content'></div>");
+		$div.append($("<h2>Tags view</h2>"));
+		var $tags = snippet("tags-summary", { tags: res });
+		$tags.find('tr:nth-child(odd)').not('tr:first').addClass('alt-row');
+		$tags.find("div.network-list").hide();
+		$div.hide().append($tags);
+		$("#view").append($div);
+		$tags.find("a.tag").click(show_tag);
+		$div.slideDown("fast");
+	});
+}
+
+function show_tag(ev)
+{
+	var $t = $(ev.target);
+	if ($t.is("a.tag")) {
+		clear_selection();
+		ev.preventDefault();
+		ev.stopPropagation();
+		var tag = $t.text();
+		var $div = $t.parent().parent().find("div.network-list");
+		if ($div.is(":hidden")) {
+			remote({what: "networks-for-tag", tag: tag}, function (res) {
+				var $tab  = $("<table class='networks'></table>");
+				$div.append($tab);
+				var n = res.length;
+				for (var i = 0; i < n; i++) {
+					$tab.append(insert_network(res[i]));
+				}
+				$tab.find('tr.network:nth-child(even)').addClass('alt-row');
+				$div.slideDown("fast");
+			});
+		} else {
+			$div.slideUp("fast", function () { $div.html(""); });
+		}
+	}
 }
 
 function stat_view()

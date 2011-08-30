@@ -1350,6 +1350,17 @@ sub handle_ipexport
 	}
 }
 
+sub handle_tags_summary
+{
+	return [fetch_tags_summary()];
+}
+
+sub handle_networks_for_tag
+{
+	my $tag = u2p(param("tag")||"");
+	return fetch_networks_for_tag($tag);
+}
+
 # === END OF HANDLERS ===
 
 sub gen_calculated_params
@@ -1766,6 +1777,53 @@ sub insert_tagstring
 {
 	my ($id, $tags) = @_;
 	insert_tags($id, tagstring2tags($tags));
+}
+
+sub fetch_tags_summary
+{
+	my $dbh = connect_db();
+	db_fetch {
+		my $n : networks;
+		my $t : network_tags;
+		$n->id == $t->net_id;
+		$n->invalidated == 0;
+		sort $t->tag;
+		return $t->tag, cnt => count($t->net_id);
+	};
+}
+
+sub fetch_networks_for_tag
+{
+	my $tag = shift;
+	my $dbh = connect_db();
+	my @n = db_fetch {
+		my $n : networks;
+		my $t : network_tags;
+		my $c : classes;
+		my $cr : classes_ranges;
+
+		$n->id == $t->net_id;
+		$n->invalidated == 0;
+		$t->tag eq $tag;
+
+		inet_contains($cr->net, $n->net);
+		$c->id == $n->class_id;
+		sort $n->net;
+		return ($n->id, $n->net,
+			$n->class_id, class_name => $c->name,
+			$n->descr, $n->created, $n->created_by,
+			parent_class_id => $cr->class_id,
+			parent_range_id => $cr->id,
+			wrong_class => ($n->class_id != $cr->class_id));
+	};
+	my $id2tag = fetch_tags_for_networks(@n);
+	for my $n (@n) {
+		$n->{created_by} ||= "";
+		$n->{descr} = u2p($n->{descr});
+		$n->{tags} = tagref2tagstring($id2tag->{$n->{id}});
+		gen_calculated_params($n);
+	}
+	return \@n;
 }
 
 sub log_change

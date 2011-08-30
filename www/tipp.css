@@ -43,6 +43,11 @@ a.net-history {
 	text-decoration: none;
 }
 
+a.tag {
+	color: #900;
+	text-decoration: none;
+}
+
 a.show-anyway {
 	color: #900;
 }
@@ -127,6 +132,10 @@ div.ip-edit {
 	border: 1px solid #800;
 	margin: 15px 10px 10px 10px;
 	padding: 5px 5px 0px 5px;
+	background-color: #fff;
+}
+
+div.network-list {
 	background-color: #fff;
 }
 
@@ -556,3 +565,29 @@ ul.connectedSortable li {
 	padding: 5px; font-size: 80%;
 	width: 140px;
 }
+
+table.tags-summary {
+	font-size: 75%;
+	border-collapse: collapse;
+}
+
+table.tags-summary th {
+	text-align: left;
+	padding: 2px 4px;
+}
+
+table.tags-summary td {
+	vertical-align: top;
+	text-align: left;
+	padding: 2px 4px;
+}
+
+table.tags-summary td.cnt {
+	font-size: 90%;
+	text-align: right;
+}
+
+table.tags-summary tr.alt-row {
+	background-color: #F4D2D2;
+}
+

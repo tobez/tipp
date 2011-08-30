@@ -1,5 +1,5 @@
 /*!
- * picosnippet v1.2
+ * picosnippet v1.4
  * http://www.tobez.org/picosnippet/
  *
  * Copyright 2010, Anton Berezin
@@ -13,9 +13,9 @@ function picosnippet(template, d)
 	/*
 	- iterate over template breadth-first
     - for every class match in d
-		- do simple subtitution (text or value) if d is a scalar
+		- do simple substitution (text or value) if d is a scalar
 		- recurse into d if d is an array (will remove node if empty array)
-		- do compound subtitution if d is an object (= hash)
+		- do compound substitution if d is an object (= hash)
 	*/
 	var subst = function(e,v) {
 		var content_changed = false;
@@ -69,7 +69,7 @@ function picosnippet(template, d)
 					rr[rr.length] = c;
 				}
 				var rrl = rr.length;
-				for (var j = 0; j < rrl; j++) {
+				for (j = 0; j < rrl; j++) {
 					t.parentNode.insertBefore(rr[j], t);  // XXX parent node might not be there
 				}
 				t.parentNode.removeChild(t);
@@ -81,7 +81,7 @@ function picosnippet(template, d)
 		}
 		if (untouched) {
 			var chl = t.children.length;
-			for (var k = 0; k < chl; k++)
+			for (k = 0; k < chl; k++)
 				q[q.length] = t.children[k];
 		}
 	}
