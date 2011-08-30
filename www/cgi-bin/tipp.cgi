@@ -17,7 +17,7 @@ use Net::DNS;
 use Text::CSV_XS;
 use CGI::Cookie;
 
-our $VERSION = "2010092701";
+our $VERSION = "2011082901";
 our $what   = param("what")   || "root";
 our $id     = param("id")     || 0;
 
@@ -191,7 +191,9 @@ sub handle_net
 		}
 	}
 	my %c;
+	my $id2tag = fetch_tags_for_networks(@c);
 	for my $c (@c) {
+		$c->{tags} = tagref2tagstring($id2tag->{$c->{id}});
 		$c{$c->{net}} = $c unless $c->{free};
 	}
 	for my $c (@c) {
@@ -222,6 +224,7 @@ sub handle_new_network
 	my $class_id = param("class_id") || 0;
 	my $descr = u2p(param("descr")||"");
 	my $limit = param("limit")||"";
+	my $tags = normalize_tagstring(u2p(param("tags")||""));
 	my $in_class_range = (param("in_class_range")||"") eq "true";
 
 	return { error => "Network must be specified" } unless $net;
@@ -295,6 +298,7 @@ sub handle_new_network
 		$dbh->rollback;
 		return { error => "Cannot insert network" };
 	}
+	insert_tagstring($new_net->{id}, $tags);
 	log_change(network => "Allocated new network $net of class $new_net->{class_name}", when => $when);
 	if ($limit && !$in_class_range) {
 		my $ret = handle_net(free => 1, limit => $limit);
@@ -308,6 +312,7 @@ sub handle_new_network
 	}
 	$dbh->commit;
 	$new_net->{descr} = u2p($new_net->{descr});
+	$new_net->{tags} = $tags;
 	$new_net->{msg} = "Network $net successfully inserted";
 	$new_net->{created_by} ||= "";
 	gen_calculated_params($new_net);
@@ -319,12 +324,14 @@ sub handle_edit_net
 	my $dbh = connect_db();
 	my $class_id = param("class_id");
 	my $descr    = u2p(param("descr"));
+	my $tags     = normalize_tagstring(u2p(param("tags")||""));
 	my $net = db_fetch { my $n : networks;  $n->id == $id;  $n->invalidated == 0; };
 	return { error => "No such network (maybe someone else changed it?)" }
 		unless $net;
 	$net->{descr} = u2p($net->{descr});
+	$net->{tags} = fetch_tagstring_for_id($id);
 	my $msg;
-	if ($descr ne $net->{descr} || $net->{class_id} != $class_id) {
+	if ($descr ne $net->{descr} || $net->{class_id} != $class_id || $net->{tags} ne $tags) {
 		my $when = time;
 		my $who = remote_user();
 		db_update {
@@ -334,8 +341,9 @@ sub handle_edit_net
 			$n->invalidated = $when;
 			$n->invalidated_by = $who;
 		};
+		my $new_id = db_fetch { return `nextval('networks_id_seq')`; };
 		db_insert 'networks', {
-			id			=> sql("nextval('networks_id_seq')"),
+			id			=> $new_id,
 			net			=> $net->{net},
 			class_id	=> $class_id,
 			descr		=> $descr,
@@ -343,6 +351,7 @@ sub handle_edit_net
 			invalidated	=> 0,
 			created_by	=> $who,
 		};
+		insert_tagstring($new_id, $tags);
 		$msg = "Network $net->{net} updated successfully";
 		log_change(network => "Modified network $net->{net}", when => $when);
 	} else {
@@ -370,6 +379,7 @@ sub handle_edit_net
 	$dbh->commit;
 	$new_net->{descr} = u2p($new_net->{descr});
 	$new_net->{msg} = $msg;
+	$new_net->{tags} = $tags;
 	$new_net->{created_by} ||= "";
 	gen_calculated_params($new_net);
 	return $new_net;
@@ -412,6 +422,9 @@ sub handle_merge_net
 	} else {
 		$descr = "[merge] $net0->{descr} | $net1->{descr}";
 	}
+
+	my $tags = tags2tagstring(fetch_tags_for_network($net0),
+		fetch_tags_for_network($net1));
 
 	my $when = time;
 	my $who = remote_user();
@@ -457,11 +470,14 @@ sub handle_merge_net
 		return { error => "Cannot merge networks in the database" };
 	}
 
+	insert_tagstring($new_net->{id}, $tags);
+
 	log_change(network => "Added network $nn (via merge of $n0 and $n1)", when => $when);
 	$dbh->commit;
 	my $msg = "Networks $n0 and $n1 successfully merged into $nn";
 
 	$new_net->{descr} = u2p($new_net->{descr});
+	$new_net->{tags} = $tags;
 	$new_net->{msg} = $msg;
 	$new_net->{created_by} ||= "";
 	gen_calculated_params($new_net);
@@ -660,14 +676,17 @@ sub handle_net_history
 			parent_class_id => $cr->class_id, $n->created_by,
 			wrong_class => ($n->class_id != $cr->class_id));
 	};
+	my $id2tag = fetch_tags_for_networks(@net);
 	my $last;
 	my @hist;
 	for my $n (@net) {
+		$n->{tags} = tagref2tagstring($id2tag->{$n->{id}});
 		if ($last && $last->{invalidated} < $n->{created}) {
 			my %fake;
 			$fake{net}			= $net;
 			$fake{class_name}	= "unallocated";
 			$fake{descr}		= "";
+			$fake{tags}			= "";
 			$fake{id}			= 0;
 			$fake{created}		= $last->{invalidated};
 			$fake{invalidated}	= $n->{created};
@@ -682,6 +701,7 @@ sub handle_net_history
 		$fake{net}			= $net;
 		$fake{class_name}	= "unallocated";
 		$fake{descr}		= "";
+		$fake{tags}			= "";
 		$fake{id}			= 0;
 		$fake{created}		= $hist[-1]->{invalidated};
 		$fake{invalidated}	= 0;
@@ -1061,9 +1081,11 @@ sub handle_split
 		my $who = remote_user();
 		my $descr = $nf->{descr};
 		$descr = "[split] $descr" unless $descr =~ /^\[split\]/;
+		my $tags = fetch_tagstring_for_id($nf->{id});
 		for my $nn (@n) {
+			my $new_id = db_fetch { return `nextval('networks_id_seq')`; };
 			db_insert 'networks', {
-				id			=> sql("nextval('networks_id_seq')"),
+				id			=> $new_id,
 				net			=> "$nn",
 				class_id	=> $nf->{class_id},
 				descr		=> $descr,
@@ -1071,6 +1093,7 @@ sub handle_split
 				invalidated	=> 0,
 				created_by	=> $who,
 			};
+			insert_tagstring($new_id, $tags);
 			log_change(network => "Added network $nn (via split)", when => $when);
 			my $ip_network   = $nn->network->addr;
 			unless (db_fetch { my $i : ips; $i->ip == $ip_network; $i->invalidated == 0; return $i->id; }) {
@@ -1128,6 +1151,7 @@ sub handle_split
 		}
 		for my $new_net (@new) {
 			$new_net->{descr} = u2p($new_net->{descr}||"");
+			$new_net->{tags} = u2p($tags);
 			$new_net->{created_by} ||= "";
 			gen_calculated_params($new_net);
 		}
@@ -1431,9 +1455,11 @@ sub search_networks
 		|| []
 	};
 	if (@n < 50 || param("all")) {
+		my $id2tag = fetch_tags_for_networks(@n);
 		for my $n (@n) {
 			$n->{created_by} ||= "";
 			$n->{descr} = u2p($n->{descr});
+			$n->{tags} = tagref2tagstring($id2tag->{$n->{id}});
 			gen_calculated_params($n);
 		}
 		return (n => \@n, nn => scalar(@n));
@@ -1650,6 +1676,96 @@ sub do_ipexport_net
 		filename => "$filename.csv",
 		content  => \@csv,
 	};
+}
+
+sub normalize_tagstring
+{
+	my %tags = map { $_ => 1 } split /\s+/, $_[0];
+	return join " ", sort keys %tags;
+}
+
+sub fetch_tagstring_for_id
+{
+	my $id = shift;
+	my $dbh = connect_db();
+	my @tags = db_fetch {
+		my $t : network_tags;
+		$t->net_id == $id;
+		return $t->tag;
+	};
+	return normalize_tagstring(join " ", map { u2p($_) } @tags);
+}
+
+sub fetch_tags_for_id
+{
+	return split /\s+/, fetch_tagstring_for_id(@_);
+}
+
+sub fetch_tagstring_for_network
+{
+	return fetch_tagstring_for_id($_[0]->{id});
+}
+
+sub fetch_tags_for_network
+{
+	return split /\s+/, fetch_tagstring_for_network(@_);
+}
+
+sub fetch_tags_for_ids
+{
+	my @ids = @_;
+	return {} unless @ids;
+	my %id2tag;
+	my $dbh = connect_db();
+	my @tags = db_fetch {
+		my $t : network_tags;
+		$t->net_id <- @ids;
+		return $t->net_id, $t->tag;
+	};
+	for my $t (@tags) {
+		push @{$id2tag{$t->{net_id}}}, u2p($t->{tag});
+	}
+	return \%id2tag;
+}
+
+sub fetch_tags_for_networks
+{
+	fetch_tags_for_ids(map { $_->{id} } @_);
+}
+
+sub tags2tagstring
+{
+	return normalize_tagstring(join " ", @_);
+}
+
+sub tagstring2tags
+{
+	return split /\s+/, normalize_tagstring($_[0]);
+}
+
+sub tagref2tagstring
+{
+	return "" unless ref($_[0]);
+	tags2tagstring(@{$_[0]});
+}
+
+sub insert_tags
+{
+	my ($id, @tags) = @_;
+	my $dbh = connect_db();
+	for my $tag (@tags) {
+		db_insert 'network_tags',
+		{
+			net_id => $id,
+			tag    => $tag,
+		}
+	}
+}
+
+sub insert_tagstring
+{
+	my ($id, $tags) = @_;
+	insert_tags($id, tagstring2tags($tags));
 }
 
 sub log_change

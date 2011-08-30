@@ -9,7 +9,7 @@ var _BIGFREE;
 function init()
 {
 	_URL = "cgi-bin/tipp.cgi";
-	_VER = "2010092701";
+	_VER = "2011082901";
 	_CHANGELOG_PAGE_SIZE = 30;
 
 	message("The status of the latest update is shown here");
@@ -482,7 +482,11 @@ function add_network($where)
 			'</td></tr>' +
 			'<tr><td class="label">Description:</td><td>' +
 			'<input type="text" size="64" maxlength="256" class="network-description"/>' +
-			'</td></tr></table><p>' +
+			'</td></tr>' +
+			'<tr><td class="label">Tags:</td><td>' +
+			'<input type="text" size="64" maxlength="256" class="network-tags"/>' +
+			'</td></tr>' +
+			'</table><p>' +
 			"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
 			"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/></p>" +
 			'</div></form></div>';
@@ -547,6 +551,7 @@ function add_network($where)
 			var $net = $form.find(".network");
 			var $descr = $form.find(".network-description");
 			var $class = $form.find(".network-class");
+			var $tags = $form.find(".network-tags");
 			if ($net.val() == "") {
 				$net.effect("bounce", {direction: "left"});
 				return carp("Network must be specified");
@@ -559,6 +564,7 @@ function add_network($where)
 				limit: limit,
 				net: $net.val(),
 				descr: $descr.val(),
+				tags: $tags.val(),
 				class_id: $class.val(),
 				in_class_range: in_class_range},
 				function (res) {
@@ -1011,7 +1017,11 @@ function edit_network($li, ev)
 		'<table><tr><td class="label">Class:</td><td>' +
 		gen_class_input(v.class_id) + '</td></tr><tr><td class="label">Description:</td><td>' +
 		'<input type="text" size="64" maxlength="256" class="network-description"/>' +
-		'</td></tr></table><p>' +
+		'</td></tr>' + 
+		'<tr><td class="label">Tags:</td><td>' +
+		'<input type="text" size="64" maxlength="256" class="network-tags"/>' +
+		'</td></tr>' +
+		'</table><p>' +
 		"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
 		"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/> &nbsp; &nbsp; " +
 		"<input class='history-button' type='image' src='images/clock.png' title='History'/> &nbsp; &nbsp; " +
@@ -1023,6 +1033,7 @@ function edit_network($li, ev)
 	var $form = $(form);
 	$form.find("div.edit-header").hide();
 	$form.find(".network-description").val(v.descr);
+	$form.find(".network-tags").val(v.tags);
 	// $li.find(".button-form").after($form);
 	$li.after($form);
 	$form.find("div.edit-header").slideDown("fast", function () {
@@ -1725,6 +1736,7 @@ function submit_edit_network(e, $ni, $form)
 		$descr.effect("bounce", {direction: "left"});
 		return carp("Network description is too short", $descr);
 	}
+	var $tags = $form.find(".network-tags");
 	var $cl = $form.find(".network-class");
 	var v = $ni.data("@net");
 
@@ -1732,7 +1744,8 @@ function submit_edit_network(e, $ni, $form)
 		what:		"edit-net",
 		id:			v.id,
 		class_id:	$cl.val(),
-		descr:		$descr.val()
+		descr:		$descr.val(),
+		tags:		$tags.val()
 	}, function (res) {
 		message(res.msg);
 		var $new_ni = insert_network(res);
@@ -1855,6 +1868,7 @@ function show_network_history(e, $form, net, with_fill_in, special_date)
 						$form.effect("highlight", {}, 1000);
 						$form.find(".network-description").val(net.descr);
 						$form.find(".network-class").val(net.class_id);
+						$form.find(".network-tags").val(net.tags);
 					});
 				$tab.append($tr);
 			}
