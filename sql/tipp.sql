@@ -62,3 +62,6 @@ create table network_tags (
 	net_id	integer,
 	tag		text
 );
+create index network_tags_net_id on network_tags (net_id);
+create index network_tags_tag on network_tags (tag);
+
