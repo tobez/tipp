@@ -970,9 +970,7 @@ sub handle_search
 	my $s = u2p(param("q") || "");
 
 	return {error => "search string not specified"} if $s eq "";
-	my @s = split / /, $s;
-	for (@s) { s/\s+//g }
-	@s = grep { $_ ne "" } @s;
+	my @s = grep { $_ ne "" } split /\s+/, $s;
 	return {error => "blank search string"} unless @s;
 
 	my %r = (search_networks(@s), search_ips(@s));
@@ -1518,8 +1516,8 @@ sub search_ips
 				}
 			}
 			unless ($already_looking) {
-				my @or = map { "$_ ilike ?" } qw(i.descr e.location e.phone e.owner e.hostname);
-				push @ip_bind, ("%$t%") x 5;
+				my @or = map { "$_ ilike ?" } qw(i.descr e.location e.phone e.owner e.hostname e.comments);
+				push @ip_bind, ("%$t%") x 6;
 				if ($t =~ /^(\d+)\.(\d+)$/ && $1 <= 255 && $2 <= 255) {
 					push @or, "text(i.ip) like ?";
 					push @ip_bind, "%$t/32";
