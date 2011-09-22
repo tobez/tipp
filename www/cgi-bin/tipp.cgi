@@ -1147,10 +1147,26 @@ sub handle_split
 			$dbh->rollback;
 			return { error => "Cannot split network $net" };
 		}
+		my %c = map { $_->{net} => $_ } @new;
 		for my $new_net (@new) {
 			$new_net->{descr} = u2p($new_net->{descr}||"");
 			$new_net->{tags} = u2p($tags);
 			$new_net->{created_by} ||= "";
+
+			# find mergeable neighbours
+			my $this = N($new_net->{net});
+			my $super = N($this->network->addr . "/" . ($this->masklen - 1));
+			my $neighbour;
+			if ($super->network->addr eq $this->network->addr) {
+				$neighbour = N($super->broadcast->addr . "/" . $this->masklen)->network;
+			} else {
+				$neighbour = N($super->network->addr . "/" . $this->masklen);
+			}
+			my $merge_with = $c{$neighbour};
+			if ($merge_with && $merge_with->{class_id} == $new_net->{class_id}) {
+				$new_net->{merge_with} = "$neighbour";
+			}
+
 			gen_calculated_params($new_net);
 		}
 		log_change(network => "Removed network $net (via split)", when => $when);
