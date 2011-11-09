@@ -179,13 +179,15 @@ sub handle_net
 			my @m;
 			for my $c (@miss) {
 				my $cid = 0;
+				my $cname = "?unknown?";
 				for my $r (@r) {
 					if ($r->{nn}->contains($c)) {
 						$cid = $r->{class_id};
+						$cname = $r->{class_name};
 						last;
 					}
 				}
-				push @m, { net => "$c", nn => $c, free => 1, id => 0, class_name => "free", class_id => $cid };
+				push @m, { net => "$c", nn => $c, free => 1, id => 0, class_name => $cname, class_id => $cid };
 			}
 			@c = sort { $a->{nn} cmp $b->{nn} } (@c, @m);
 		}

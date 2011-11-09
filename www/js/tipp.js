@@ -6,6 +6,7 @@ var _status_area;
 var _SERVER_CAPS;
 var _LINKIFY;
 var _BIGFREE;
+var _STATS_BY_CLASS;
 function init()
 {
 	_URL = "cgi-bin/tipp.cgi";
@@ -192,6 +193,7 @@ function show_tag(ev)
 function stat_view()
 {
 	_BIGFREE = [];
+	_STATS_BY_CLASS = {};
 	remote({what: "top-level-nets"}, function (res) {
 		var $div = $("<div class='linklist' id='main-content'></div>");
 		$div.append($("<h2>IPv4 Usage Statistics (network based)</h2>"));
@@ -208,6 +210,19 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
 {
 	if (i >= n) {
 		// finalize
+
+		$div.append($("<h2>IPv4 usage statistics (category based)</h2>"));
+		var $table = $("<table class='networks'><tr><th>Category</th><th>Total IPs</th><th>Used IPs</th><th>Free IPs</th></tr></table>");
+		for (var class_name in _STATS_BY_CLASS) {
+			var $tr = $("<tr class='network'><td class='network'>" + class_name + "</td><td class='ip'>" +
+				_STATS_BY_CLASS[class_name].total + "</td><td class='ip'>" +
+				_STATS_BY_CLASS[class_name].used + "</td><td class='ip'>" +
+				_STATS_BY_CLASS[class_name].unused + "</td></tr>");
+			$table.append($tr);
+		}
+		$table.find('tr.network:nth-child(even)').addClass('alt-row');
+		$div.append($table);
+
 		$div.append(snippet("statistics-usage-summary", {
             total : all_total,
             used  : all_used,
@@ -249,15 +264,25 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
 			for (var k = 0; k < n_nets; k++) {
 				var net = nets[k];
 				if (net.f == 4) {
+					if (!_STATS_BY_CLASS[net.class_name]) {
+						_STATS_BY_CLASS[net.class_name] = {
+							total: 0,
+							used: 0,
+							unused: 0
+						};
+					}
+					_STATS_BY_CLASS[net.class_name].total += net.sz;
 					if (net.free == 1) {
 						ip_free += net.sz;
 						if (!net.private && net.bits < 24) { // a bit arbitrary
 							if (!_BIGFREE[net.bits]) _BIGFREE[net.bits] = [];
 							_BIGFREE[net.bits].push(net);
 						}
+						_STATS_BY_CLASS[net.class_name].unused += net.sz;
 					} else {
 						ip_used += net.sz;
 						if (!net.private)	all_used += net.sz;
+						_STATS_BY_CLASS[net.class_name].used += net.sz;
 					}
 					ip_total += net.sz;
 					if (!net.private)	all_total += net.sz;
