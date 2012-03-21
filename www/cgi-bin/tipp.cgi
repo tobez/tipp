@@ -975,9 +975,10 @@ sub handle_search
 	my @s = grep { $_ ne "" } split /\s+/, $s;
 	return {error => "blank search string"} unless @s;
 
-	my %r = (search_networks(@s), search_ips(@s));
-	$r{n} ||= [];
-	$r{i} ||= [];
+	my %r = (search_networks(@s), search_ips(0, @s), search_ips(1, @s));
+	$r{n}  ||= [];
+	$r{i}  ||= [];
+	$r{hi} ||= [];
 	return \%r;
 }
 
@@ -1498,10 +1499,19 @@ sub search_networks
 
 sub search_ips
 {
-	my @s = @_;
+	my ($history, @s) = @_;
 	my $only = param("only") || "";
-	return () if $only && $only ne "ip";
-	my @ip_sql = ('i.invalidated = 0');
+	my @ip_sql;
+	my $name;
+	if ($history) {
+		return () if $only && $only ne "ip-history";
+		@ip_sql = ('i.invalidated <> 0');
+		$name = "hi";
+	} else {
+		return () if $only && $only ne "ip";
+		@ip_sql = ('i.invalidated = 0');
+		$name = "i";
+	}
 	my @ip_bind;
 	for my $t (@s) {
 		if (@s > 1 && $t =~ /^(\d+)\.$/ && $1 > 0 && $1 <= 255) {
@@ -1561,10 +1571,15 @@ sub search_ips
 				$i->{$k} = u2p($i->{$k});
 			}
 		}
-		return (i => \@i, ni => scalar(@i));
+		return ($name => \@i, "n$name" => scalar(@i));
 	} else {
-		return (ni => scalar(@i),
-			ip_message => "Too many IPs found, try to limit the search, or {view all results anyway}.");
+		my @r = ("n$name" => scalar(@i));
+		if ($history) {
+			push @r, ip_history_message => "Too many historic IPs found, try to limit the search, or {view all results anyway}."
+		} else {
+			push @r, ip_message => "Too many IPs found, try to limit the search, or {view all results anyway}."
+		}
+		return @r;
 	}
 }
 

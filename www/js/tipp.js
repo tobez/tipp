@@ -337,6 +337,8 @@ function search()
 		network_search_results($div, res);
 		$div.append($("<h2>Matching IP addresses (" + res.ni + ")</h2>"));
 		ip_search_results($div, res);
+		$div.append($("<h2>Matching historic IP addresses (" + res.nhi + ")</h2>"));
+		ip_history_search_results($div, res);
 		$("#view").append($div);
 		$div.slideDown("fast");
 	});
@@ -383,6 +385,33 @@ function ip_search_results($div, res)
 	$div.append($ips);
 }
 
+function ip_history_search_results($div, res)
+{
+	if (res.hi.length == 0 && !res.ip_message)
+		res.ip_history_message = "No matches.";
+	if (res.ip_history_message)
+		$div.append(possibly_full_search("ip-history", res.ip_history_message));
+	if (res.hi.length == 0)
+		return;
+	var $ips = $("<div class='addresses'><table class='addresses'></table></div>");
+	var n = res.hi.length;
+	var trs = "";
+	for (var i = 0; i < n; i++) {
+		var v = res.hi[i];
+		trs += "<tr class='ip-info'><td class='ip'>" +
+			'<a class="show-net" href="#" title="Show network">' +
+			'<span class="form-icon ui-icon ui-icon-arrowreturnthick-1-n"></span></a>' +
+			"<a class='ip' href='#'>" + v.ip + "</a>" +
+			"</td><td class='description'>" + ip_description(v) +
+			"</td></tr>";
+	}
+	$ips.find("table").append(trs);
+	$ips.find('tr:nth-child(even)').addClass('alt-row');
+	$ips.find("table.addresses").click(edit_ip);
+	$div.append($ips);
+}
+
+
 function possibly_full_search(what, msg)
 {
 	var m = msg.replace(/{(.*?)}/, "<a class='show-anyway' href='#'>$1</a>");
@@ -398,6 +427,8 @@ function possibly_full_search(what, msg)
 				network_search_results($new_div, res);
 			if (what == "ip")
 				ip_search_results($new_div, res);
+			if (what == "ip-history")
+				ip_history_search_results($new_div, res);
 			$div.replaceWith($new_div);
 			$new_div.slideDown("fast");
 		});
