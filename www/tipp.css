@@ -333,6 +333,10 @@ table.networks td.class_name {
 	font-size: 75%;
 }
 
+span.usage_stats {
+	font-size: 65%;
+}
+
 table.networks th {
 	text-align: left;
 	padding: 2px 4px;

@@ -333,7 +333,14 @@ function search()
 	remote({what: "search", q: v}, function (res) {
 		var $div = $("<div class='linklist' id='main-content'></div>");
 		$div.hide();
-		$div.append($("<h2>Matching networks (" + res.nn + ")</h2>"));
+		if (res.n.length != 0) {
+			$div.append($("<h2>Matching networks (" + res.nn +
+				");  <font size='smaller'>IPv4 addresses/used/free: " +
+				res.v4_size + "/" + res.v4_used + "/" + res.v4_free +
+				"</font></h2>"));
+		} else {
+			$div.append($("<h2>Matching networks (" + res.nn + ")</h2>"));
+		}
 		network_search_results($div, res);
 		$div.append($("<h2>Matching IP addresses (" + res.ni + ")</h2>"));
 		ip_search_results($div, res);
@@ -1006,12 +1013,16 @@ function insert_network(v)
 			"</td><td class='description'>" +
 			"<span class='netinfo'>" + linkify(v.descr) + "</span></td></tr>");
 	} else {
+		var extra = "";
+		if (v.f == 4 && (v.used || v.unused)) {
+			extra = "<span class='usage_stats'>" + v.sz + "/" + v.used + "/" + v.unused + "</span>&nbsp;&nbsp;";
+		}
 		$ni = $("<tr class='network can-select'><td class='network'>" +
 			"<form class='button-form'>" +
 			'<a class="edit-button" href="#" title="Edit"><span class="form-icon ui-icon ui-icon-document"></span></a> ' +
 			'<span>' +
 			"<a class='address-link' href='#'>" + v.net + "</a>" +
-			"</span></form></td><td class='class_name'>" +
+			"</span></form></td><td class='class_name'>" + extra +
 			"<span class='netinfo class_name'> " + v.class_name + "</span>" +
 			"</td><td class='description'>" +
 			"<span class='netinfo'>" + linkify(v.descr) + "</span></td></tr>");

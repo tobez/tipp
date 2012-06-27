@@ -1484,13 +1484,40 @@ sub search_networks
 	};
 	if (@n < 50 || param("all")) {
 		my $id2tag = fetch_tags_for_networks(@n);
+		my @ids = map { $_->{id} } @n;
+		my %used;
+		if (@n) {
+			%used = db_fetch {
+				my $n : networks;
+				my $i : ips;
+				join $n < $i => db_fetch {
+					inet_contains($n->net, $i->ip);
+					$i->invalidated == 0;
+				};
+				$n->id <- @ids;
+				return -k $n->id, count($i->id);
+			};
+		}
+		my $tot_size = 0;
+		my $tot_used = 0;
+		my $tot_free = 0;
 		for my $n (@n) {
 			$n->{created_by} ||= "";
 			$n->{descr} = u2p($n->{descr});
 			$n->{tags} = tagref2tagstring($id2tag->{$n->{id}});
 			gen_calculated_params($n);
+			$n->{used} = $used{$n->{id}}||0;
+			$n->{unused} = $n->{sz} - $n->{used};
+			if ($n->{f} == 4) {
+				$tot_size += $n->{sz};
+				$tot_used += $n->{used};
+				$tot_free += $n->{unused};
+			}
 		}
-		return (n => \@n, nn => scalar(@n));
+		return (n => \@n, nn => scalar(@n),
+			v4_used => $tot_used,
+			v4_free => $tot_free,
+			v4_size => $tot_size);
 	} else {
 		return (nn => scalar(@n),
 			net_message => "Too many networks found, try to limit the search, or {view all results anyway}.");
