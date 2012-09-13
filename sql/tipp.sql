@@ -65,3 +65,9 @@ create table network_tags (
 create index network_tags_net_id on network_tags (net_id);
 create index network_tags_tag on network_tags (tag);
 
+create table groups (
+    id integer primary key,
+    name text,
+    comments text,
+    permissions text
+);
