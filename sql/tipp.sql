@@ -71,3 +71,10 @@ create table groups (
     comments text,
     permissions text
 );
+create sequence groups_id_seq;
+
+create table users (
+    name text primary key,
+    group_id    integer
+);
+
