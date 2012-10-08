@@ -1,12 +1,12 @@
 /*!
- * picosnippet v1.4
+ * picosnippet v1.5
  * http://www.tobez.org/picosnippet/
  *
- * Copyright 2010, Anton Berezin
+ * Copyright 2010-2012, Anton Berezin
  * Modified BSD license.
  * http://www.tobez.org/picosnippet/license.txt
  *
- * Date: Thu Jun 24 13:30:41 CEST 2010
+ * Date: Mon Oct  8 10:28:24 CEST 2012
  */
 function picosnippet(template, d)
 {
@@ -24,6 +24,18 @@ function picosnippet(template, d)
 				if (a == "text") {
 					e.innerHTML = v[a];
 					content_changed = true;
+				} else if (a == "checked") {
+					if (v[a])
+						e.setAttribute(a, "checked");
+					else
+						e.removeAttribute(a);
+					e.checked = v[a];
+				} else if (a == "selected") {
+					if (v[a])
+						e.setAttribute(a, "selected");
+					else
+						e.removeAttribute(a);
+					e.selected = v[a];
 				} else {
 					e.setAttribute(a, v[a]);
 				}
@@ -38,9 +50,8 @@ function picosnippet(template, d)
 	};
 	var result = template.cloneNode(true);
 	// in IE 7.0, one cannot delete el.id... :-/
-	result.id = "";
 	var err;
-	try { delete result.id; } catch (err) { /* do nothing */ }
+	try { delete result.id; } catch (err) { result.id = ""; }
 	// result.innerHTML = template.innerHTML;  - this is broken for <tr> in modern FF
 	var q = [result];
 	var i = 0;

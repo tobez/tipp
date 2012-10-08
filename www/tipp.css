@@ -139,6 +139,28 @@ div.network-list {
 	background-color: #fff;
 }
 
+div.edit-group {
+	border: 1px solid #800;
+	margin: 15px 10px 10px 10px;
+	padding: 5px 5px 0px 5px;
+}
+
+div.edit-user {
+	border: 1px solid #800;
+	margin: 15px 10px 10px 10px;
+	padding: 5px 5px 0px 5px;
+}
+
+td.class-name {
+	vertical-align: top;
+	font-size: 80%;
+	font-weight: bold;
+}
+
+td.default {
+	color: #888;
+}
+
 div.edit-range-form {
 	border: 1px solid #800;
 	margin: 15px 10px 10px 10px;
@@ -433,6 +455,11 @@ table.changelog-form td.label {
 	overflow-y: auto; 
 
 	font-size: 12px;
+}
+
+.hidden
+{
+	display: none;
 }
 
 .loader

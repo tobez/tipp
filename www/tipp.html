@@ -16,12 +16,14 @@
 <td class="home-button"><input id='home-button' name='home-button' type='image' src='images/home.png' title='Browse' alt='Browse'/></td>
 <td><input id='net-view-button' name='net-view-button' type='image' src='images/net-view.png' title='Network view' alt='Network view'/></td>
 <td><input id='tag-view-button' name='tag-view-button' type='image' src='images/star_full.png' title='Tag view' alt='Tag view'/></td>
-<td><input id='add-button' name='add-button' type='image' src='images/notification_add.png' title='New network' alt='New network'/></td>
+<td id='add-button-cell' class='hidden'><input id='add-button' name='add-button' type='image' src='images/notification_add.png' title='New network' alt='New network'/></td>
 <td><input id='changelog-button' name='changelog-button' type='image' src='images/document_search.png' title='View changelog' alt='View changelog'/></td>
-<td><input id='add-range-button' name='add-range-button' type='image' src='images/folder_add.png' title='Add class range' alt='Add class range'/></td>
-<td><input id='statistics-button' name='statistics-button' type='image' src='images/piechart.png' title='Statistics' alt='Statistics'/></td>
+<td id='add-range-button-cell' class='hidden'><input id='add-range-button' name='add-range-button' type='image' src='images/folder_add.png' title='Add class range' alt='Add class range'/></td>
+<td id='statistics-button-cell' class='hidden'><input id='statistics-button' name='statistics-button' type='image' src='images/piechart.png' title='Statistics' alt='Statistics'/></td>
+<td id='settings-button-cell' class='hidden'><input id='settings-button' name='settings-button' type='image' src='images/user_manage.png' title='Settings' alt='Settings'/></td>
 </tr>
 </table>
+
 </form>
 </div>
 <!--
@@ -292,6 +294,106 @@ information to export.
      </tr>
     </table>
 </div>
+
+<div id="edit-group">
+	<div class="edit-group"><form class="group-edit-form">
+		<div class="edit-header">Editing group <span class="group">BLAH</span></div>
+		<div class="edit-form">
+			<table>
+				<tr><td class="label">Comments:</td>
+				<td><input type="text" size="64" maxlength="256" class="comments"/></td></tr>
+				<tr><td class="label">Superuser:</td>
+				<td><input type="checkbox" class="group_superuser"/></td></tr>
+				<tr><td class="label">View usage statistics:</td>
+				<td><input type="checkbox" class="group_view_usage_stats"/></td></tr>
+				<tr><td class="label">View changelog:</td>
+				<td><input type="checkbox" class="group_view_changelog"/></td></tr>
+			</table>
+			<table class="class-permissions"><tbody></tbody></table>
+			<p>
+				<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/>
+				<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/>
+			</p>
+		</div>
+	</form></div>
+</div>
+
+<div id="add-group">
+	<div class="edit-group"><form class="group-edit-form">
+		<div class="edit-header">Adding new group</div>
+		<div class="edit-form">
+			<table>
+				<tr><td class="label">Group name:</td>
+				<td><input type="text" size="40" maxlength="256" class="group"/></td></tr>
+				<tr><td class="label">Comments:</td>
+				<td><input type="text" size="64" maxlength="256" class="comments"/></td></tr>
+				<tr><td class="label">Superuser:</td>
+				<td><input type="checkbox" class="group_superuser"/></td></tr>
+				<tr><td class="label">View usage statistics:</td>
+				<td><input type="checkbox" class="group_view_usage_stats"/></td></tr>
+				<tr><td class="label">View changelog:</td>
+				<td><input type="checkbox" class="group_view_changelog"/></td></tr>
+			</table>
+			<table class="class-permissions"><tbody></tbody></table>
+			<p>
+				<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/>
+				<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/>
+			</p>
+		</div>
+	</form></div>
+</div>
+
+<div id="edit-user">
+	<div class="edit-user"><form class="user-edit-form">
+		<div class="edit-header">Editing user <span class="user">BLAH</span></div>
+		<div class="edit-form">
+			<table>
+				<tr><td class="label">Group:</td>
+				<td><select class="group_select">
+				<option class="group" value="id">Group name</option>
+				</select></td></tr>
+			</table>
+			<table class="class-permissions"><tbody></tbody></table>
+			<p>
+				<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/>
+				<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/>
+			</p>
+		</div>
+	</form></div>
+</div>
+
+<div id="add-user">
+	<div class="edit-user"><form class="user-edit-form">
+		<div class="edit-header">Adding new user</div>
+		<div class="edit-form">
+			<table>
+				<tr><td class="label">User name:</td>
+				<td><input type="text" size="40" maxlength="256" class="user"/></td></tr>
+				<tr><td class="label">Group:</td>
+				<td><select class="group_select">
+				<option class="group" value="id">Group name</option>
+				</select></td></tr>
+			</table>
+			<table class="class-permissions"><tbody></tbody></table>
+			<p>
+				<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/>
+				<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/>
+			</p>
+		</div>
+	</form></div>
+</div>
+
+<table><tbody id="class-permissions">
+	<tr>
+		<td class="class-name">Defaults</td>
+		<td class="label">Ranges:</td>
+		<td><input type="checkbox" class="group_range"/></td>
+		<td class="label">Networks:</td>
+		<td><input type="checkbox" class="group_net"/></td>
+		<td class="label">IPs:</td>
+		<td><input type="checkbox" class="group_ip"/></td>
+	</tr>
+</tbody></table>
 
 </div>
 </body>

@@ -7,10 +7,11 @@ var _SERVER_CAPS;
 var _LINKIFY;
 var _BIGFREE;
 var _STATS_BY_CLASS;
+var _PERMS = {};
 function init()
 {
 	_URL = "cgi-bin/tipp.cgi";
-	_VER = "2011082901";
+	_VER = "2012092501";
 	_CHANGELOG_PAGE_SIZE = 30;
 
 	message("The status of the latest update is shown here");
@@ -18,9 +19,14 @@ function init()
 	remote({ what: "config" }, function (res) {
 		_SERVER_CAPS = res.caps;
 		_LINKIFY = res.linkify;
+		_PERMS = res.permissions;
 		$("h1").text($("h1").text() + res.extra_header);
 		document.title = document.title + res.extra_header;
 		$("#login-name").html("Welcome, <strong>" + res.login + "</strong>");
+		if (can("net")) $("#add-button-cell").show();
+		if (can("range")) $("#add-range-button-cell").show();
+		if (can("view_usage_stats")) $("#statistics-button-cell").show();
+		if (can("superuser")) $("#settings-button-cell").show();
 	});
 
 	$("#search").focus();
@@ -77,6 +83,13 @@ function init()
 		clear_selection();
 		$("#main-content").remove();
 		stat_view();
+	});
+	$('#settings-button').click(function (ev) {
+		ev.preventDefault();
+		ev.stopPropagation();
+		clear_selection();
+		$("#main-content").remove();
+		settings_view();
 	});
 
 	browse();
@@ -164,6 +177,262 @@ function tag_view()
 	});
 }
 
+function generate_group_edit_form(settings, g, classes)
+{
+	var p = g ? g.permissions : {};
+	var $edit_group = snippet(g ? "edit-group" : "add-group", {
+		group: g ? g.name : "change me!",
+		comments: g ? g.comments : "",
+		group_superuser: { checked : p.superuser },
+		group_view_changelog: { checked: p.view_changelog },
+		group_view_usage_stats: { checked: p.view_usage_stats }
+	 });
+	var $by_class = $edit_group.find("table.class-permissions").find("tbody");
+	$by_class.append(snippet("class-permissions", {
+		"class-name": { text: "default permissions", class: "class-name default" },
+		group_range: { checked: p.range, class: "group_range class-id-0" },
+		group_net: { checked: p.net, class: "group_net class-id-0" },
+		group_ip: { checked: p.ip, class: "group_ip class-id-0" }
+	}));
+	var cn = classes.length;
+	for (var ci = 0; ci < cn; ci++) {
+		var class_id = classes[ci].id;
+		$by_class.append(snippet("class-permissions", {
+			"class-name": classes[ci].name,
+			group_range: { checked: p.by_class && p.by_class[class_id] ? p.by_class[class_id].range : 0,
+				class: "group_range class-id-" + class_id },
+			group_net  : { checked: p.by_class && p.by_class[class_id] ? p.by_class[class_id].net   : 0,
+				class: "group_net class-id-" + class_id },
+			group_ip   : { checked: p.by_class && p.by_class[class_id] ? p.by_class[class_id].ip    : 0,
+				class: "group_ip class-id-" + class_id }
+		}));
+	}
+
+	$edit_group.find('.cancel-button').click(function (ev) {
+		ev.preventDefault();
+		ev.stopPropagation();
+		var $li = $edit_group.parent();
+		$li.data("shown", false);
+		var $el = $li.find("a.edit-group-link");
+		$el.find("span.ui-icon").removeClass("ui-icon-carat-1-n");
+		$el.find("span.ui-icon").addClass("ui-icon-carat-1-e");
+		$edit_group.slideUp("fast", function () { $edit_group.remove(); });
+	});
+
+	$edit_group.find('.ok-button').click(function (ev) {
+		ev.preventDefault();
+		ev.stopPropagation();
+
+		var data = {};
+		$edit_group.find("input").each(function () {
+			var $inp = $(this);
+			if ($inp.attr("type") == "checkbox" && $inp.attr("checked")) {
+				var c = $inp.attr("class");
+				var class_id = c.replace(/^group_\S+\s+class-id-(\d+)$/, "$1");
+				if (class_id != c) {
+					var perm = c.replace(/^group_(\S+)\s+class-id-\d+$/, "$1");
+					data[perm + "-" + class_id] = 1;
+				} else {
+					var perm = c.replace(/^group_(\S+)$/, "$1");
+					data[perm] = 1;
+				}
+			} else if ($inp.attr("type") == "text" && $inp.attr("class") == "group") {
+				data["name"] = $inp.val();
+			} else if ($inp.attr("type") == "text" && $inp.attr("class") == "comments") {
+				data["comments"] = $inp.val();
+			}
+		});
+		data["gid"] = g ? g.id : 0;
+		data["what"] = "update-group";
+
+		remote(data, function (gg) {
+			var $li = $edit_group.parent();
+			$li.data("shown", false);
+			var $el = $li.find("a.edit-group-link");
+			$el.find("span.ui-icon").removeClass("ui-icon-carat-1-n");
+			$el.find("span.ui-icon").addClass("ui-icon-carat-1-e");
+			$edit_group.slideUp("fast", function () {
+				$edit_group.remove();
+				if (g) {
+					var $new_li = generate_group_edit_link(settings, gg, classes);
+					$li.replaceWith($new_li);
+					$new_li.effect("highlight", {}, 1000);
+				} else {
+					var $new_li = generate_group_edit_link(settings, gg, classes);
+					$li.before($new_li);
+					$new_li.effect("highlight", {}, 1000);
+				}
+				settings.groups[gg.id] = gg;
+			});
+		});
+	});
+
+	return $edit_group.hide();
+}
+
+function generate_group_edit_link(settings, g, classes)
+{
+	var $li = $('<li><a class="edit-group-link" href="#"><span class="form-icon ui-icon ui-icon-carat-1-e"></span>'
+		+ (g ? g.name : "..[new group]..") + "</a></li>");
+	var $el = $li.find("a.edit-group-link");
+	$li.data("shown", false);
+	$el.click(function(ev) {
+		ev.preventDefault();
+		ev.stopPropagation();
+		clear_selection();
+		if ($li.data("shown")) {
+			$li.data("shown", false);
+			$el.find("span.ui-icon").removeClass("ui-icon-carat-1-n");
+			$el.find("span.ui-icon").addClass("ui-icon-carat-1-e");
+			var $div = $li.find("div.edit-group");
+			$div.slideUp("fast", function () { $div.remove(); });
+		} else {
+			$li.data("shown", true);
+			$el.find("span.ui-icon").removeClass("ui-icon-carat-1-e");
+			$el.find("span.ui-icon").addClass("ui-icon-carat-1-n");
+			var $div = generate_group_edit_form(settings, g, classes);
+			$li.append($div);
+			$div.slideDown("fast");
+			$div.find("input.group").focus().select();
+		}
+	});
+	return $li;
+}
+
+function all_groups(groups, callback)
+{
+	var keys = [];
+	var i = 0;
+	for (var id in groups) {
+		if (groups.hasOwnProperty(id)) {
+			keys[i++] = id;
+		}
+	}
+	var l = keys.length;
+	keys.sort(function(a,b){return a-b});
+	for (i = 0; i < l; i++) {
+		callback(groups[keys[i]]);
+	}
+}
+
+function generate_user_edit_form(settings, u)
+{
+	var data = {};
+	data.user = u ? u.name : "change me!";
+	data.group = [];
+	var selected_gid = u ? u.group_id : settings.default_group;
+	var i = 0;
+	all_groups(settings.groups, function (g) {
+		data.group[i] = { group: {
+			value: g.id,
+			text: g.name,
+			selected: g.id == selected_gid
+		}};
+		i++;
+	});
+
+	var $edit_user = snippet(u ? "edit-user" : "add-user", data);
+	$edit_user = $($edit_user[0].outerHTML);
+
+	$edit_user.find('.cancel-button').click(function (ev) {
+		ev.preventDefault();
+		ev.stopPropagation();
+		var $li = $edit_user.parent();
+		$li.data("shown", false);
+		var $el = $li.find("a.edit-user-link");
+		$el.find("span.ui-icon").removeClass("ui-icon-carat-1-n");
+		$el.find("span.ui-icon").addClass("ui-icon-carat-1-e");
+		$edit_user.slideUp("fast", function () { $edit_user.remove(); });
+	});
+
+	$edit_user.find('.ok-button').click(function (ev) {
+		ev.preventDefault();
+		ev.stopPropagation();
+
+		var name = u ? u.name : $edit_user.find("input.user").val();
+		var gid = $edit_user.find("select.group_select option:selected").val();
+		remote({ what: "update-user", user: name, group_id: gid }, function (uu) {
+			var $li = $edit_user.parent();
+			$li.data("shown", false);
+			var $el = $li.find("a.edit-user-link");
+			$el.find("span.ui-icon").removeClass("ui-icon-carat-1-n");
+			$el.find("span.ui-icon").addClass("ui-icon-carat-1-e");
+			$edit_user.slideUp("fast", function () {
+				$edit_user.remove();
+				if (u) {
+					var $new_li = generate_user_edit_link(settings, uu);
+					$li.replaceWith($new_li);
+					$new_li.effect("highlight", {}, 1000);
+				} else {
+					var $new_li = generate_user_edit_link(settings, uu);
+					$li.before($new_li);
+					$new_li.effect("highlight", {}, 1000);
+				}
+			});
+		});
+	});
+
+	return $edit_user.hide();
+}
+
+function generate_user_edit_link(settings, u)
+{
+	var $li = $('<li><a class="edit-user-link" href="#"><span class="form-icon ui-icon ui-icon-carat-1-e"></span>'
+		+ (u ? u.name : "..[new user]..") + "</a></li>");
+	var $el = $li.find("a.edit-user-link");
+	$li.data("shown", false);
+	$el.click(function(ev) {
+		ev.preventDefault();
+		ev.stopPropagation();
+		clear_selection();
+		if ($li.data("shown")) {
+			$li.data("shown", false);
+			$el.find("span.ui-icon").removeClass("ui-icon-carat-1-n");
+			$el.find("span.ui-icon").addClass("ui-icon-carat-1-e");
+			var $div = $li.find("div.edit-user");
+			$div.slideUp("fast", function () { $div.remove(); });
+		} else {
+			$li.data("shown", true);
+			$el.find("span.ui-icon").removeClass("ui-icon-carat-1-e");
+			$el.find("span.ui-icon").addClass("ui-icon-carat-1-n");
+			var $div = generate_user_edit_form(settings, u);
+			$li.append($div);
+			$div.slideDown("fast");
+			$div.find("input.user").focus().select();
+		}
+	});
+	return $li;
+}
+
+function settings_view()
+{
+	remote({what: "fetch-settings"}, function (res) {
+		var $div = $("<div class='linklist' id='main-content'></div>").hide();
+
+		$div.append($("<h2>Group management</h2>"));
+		var $group_ul = $("<ul></ul>");
+		$div.append($group_ul);
+
+		all_groups(res.groups, function (g) {
+			$group_ul.append(generate_group_edit_link(res, g, res.classes));
+		});
+		$group_ul.append(generate_group_edit_link(res, null, res.classes));
+
+		$div.append($("<h2>User management</h2>"));
+		var $user_ul = $("<ul></ul>");
+		$div.append($user_ul);
+
+		var n = res.users.length;
+		for (var i = 0; i < n; i++) {
+			$user_ul.append(generate_user_edit_link(res, res.users[i]));
+		}
+		$user_ul.append(generate_user_edit_link(res, null));
+
+		$("#view").append($div);
+		$div.slideDown("fast");
+	});
+}
+
 function show_tag(ev)
 {
 	var $t = $(ev.target);
@@ -242,7 +511,7 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
 					var $tr = $("<tr class='network class-range'><td class='network'></td><td class='ip'>" +
 						"<div class='class-range'>" +
 						_BIGFREE[k][j].net +
-						button_icon("allocate", "plus", "Allocate network in this range") +
+						maybe("net", null, button_icon("allocate", "plus", "Allocate network in this range")) +
 						"<span class='extras-here'></span>" +
 						"</div>" +
 						"</td></tr>");
@@ -586,7 +855,7 @@ function add_network($where)
 			'<div class="edit-header">Allocating new network' +
 			inside + '</div><div class="edit-form">' +
 			'<table><tr><td class="label">Class:</td><td>' +
-			gen_class_input(class_id) + '</td></tr>' +
+			gen_class_input(class_id, "net") + '</td></tr>' +
 			'<tr><td class="label">Network:</td><td>' +
 			'<input type="text" size="32" maxlength="32" class="network with-icon"/>' +
 			'<a href="#" title="Suggest network based on specified size"><span class="form-icon ui-icon ui-icon-gear right suggest"></span>' +
@@ -722,7 +991,7 @@ function add_class_range()
 		var form = '<div id="add-class-range-form" class="edit-class-range"><form class="class-range-edit-form">' +
 			'<div class="edit-header">Creating new class range</div><div class="edit-form">' +
 			'<table><tr><td class="label">Class:</td><td>' +
-			gen_class_input(0) + '</td></tr>' +
+			gen_class_input(0, "range") + '</td></tr>' +
 			'<tr><td class="label">Class range:</td><td>' +
 			'<input type="text" size="32" maxlength="32" class="class-range-range"/>' +
 			'</td></tr>' +
@@ -831,11 +1100,12 @@ function add_class_link($el, class_id)
 					"<span class='netinfo td-like' style='width: 7em;'> " +
 					"<a href='#' class='show-net with-free'>" + free_space + " free</a>" +
 					"</span>" +
-					'<span class="buttons td-like">' + button_icon("edit-range", "document", "Edit range") +
+					'<span class="buttons td-like">' + 
+					maybe("range", class_id, button_icon("edit-range", "document", "Edit range")) +
 					(v.addresses == 0 ? "" :
-					' ' + button_icon("allocate", "plus", "Allocate network in this range")) +
+					' ' + maybe("net", class_id, button_icon("allocate", "plus", "Allocate network in this range"))) +
 					(v.used != 0 ? "" :
-					' ' + button_icon("delete-range", "close", "Delete this range")) +
+					' ' + maybe("range", class_id, button_icon("delete-range", "close", "Delete this range"))) +
 					(v.used == 0 ? "" :
 					' ' + button_icon("export-csv", "disk", "Export CSV")) +
 					"</span>" +
@@ -911,7 +1181,7 @@ function edit_class_range($li)
 	var form = '<div class="edit-class-range"><form class="class-range-edit-form">' +
 		'<div class="edit-header">Editing class range ' + v.net + '</div><div class="edit-form">' +
 		'<table><tr><td class="label">Class:</td><td>' +
-		gen_class_input(v.class_id) + '</td></tr><tr><td class="label">Description:</td><td>' +
+		gen_class_input(v.class_id, "range") + '</td></tr><tr><td class="label">Description:</td><td>' +
 		'<input type="text" size="64" maxlength="256" class="class-range-description"/>' +
 		'</td></tr></table><p>' +
 		"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
@@ -1019,7 +1289,7 @@ function insert_network(v)
 		}
 		$ni = $("<tr class='network can-select'><td class='network'>" +
 			"<form class='button-form'>" +
-			'<a class="edit-button" href="#" title="Edit"><span class="form-icon ui-icon ui-icon-document"></span></a> ' +
+			maybe("net", v.class_id, '<a class="edit-button" href="#" title="Edit"><span class="form-icon ui-icon ui-icon-document"></span></a> ') +
 			'<span>' +
 			"<a class='address-link' href='#'>" + v.net + "</a>" +
 			"</span></form></td><td class='class_name'>" + extra +
@@ -1130,7 +1400,7 @@ function edit_network($li, ev)
 	var form = '<tr><td colspan="3"><div class="network-edit"><form class="network-edit-form">' +
 		'<div class="edit-header">Editing network ' + v.net + '</div><div class="edit-form">' +
 		'<table><tr><td class="label">Class:</td><td>' +
-		gen_class_input(v.class_id) + '</td></tr><tr><td class="label">Description:</td><td>' +
+		gen_class_input(v.class_id, "net") + '</td></tr><tr><td class="label">Description:</td><td>' +
 		'<input type="text" size="64" maxlength="256" class="network-description"/>' +
 		'</td></tr>' + 
 		'<tr><td class="label">Tags:</td><td>' +
@@ -1140,8 +1410,8 @@ function edit_network($li, ev)
 		"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
 		"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/> &nbsp; &nbsp; " +
 		"<input class='history-button' type='image' src='images/clock.png' title='History'/> &nbsp; &nbsp; " +
-		"<input class='remove-button' type='image' src='images/notification_remove.png' title='Remove'/>";
-	if (v.merge_with)
+		maybe("net", v.class_id, "<input class='remove-button' type='image' src='images/notification_remove.png' title='Remove'/>");
+	if (v.merge_with && can("net", v.class_id))
 		form += "&nbsp;&nbsp;<input class='merge-button' type='image' src='images/load_download.png' title='Merge with " +
 		v.merge_with + "'/>";
 	form += '</p></div></form></div></td></tr>';
@@ -1170,13 +1440,17 @@ function edit_network($li, ev)
 	$form.find(".merge-button").click(function(e) { submit_merge_network(e, $li, $form); });
 }
 
-function gen_class_input(selected_id)
+function gen_class_input(selected_id, kind)
 {
 	var r = "<select class='network-class'>";
 	var res = $(document).data("@classes");
 	var n = res.length;
 	for (var i = 0; i < n; i++) {
 		var v = res[i];
+
+		if (!can(kind, v.id))
+			continue;
+
 		var o = '<option value="' + v.id + '"';
 		if (v.id == selected_id) o += ' selected';
 		o += '>' + v.name + '</option>';
@@ -1219,11 +1493,11 @@ function gen_address_pages(ni, res)
 			if (i / 8. <= 1) {
 				var buttons = "<td valign='top'>";
 				if (_SERVER_CAPS.split)
-					buttons += button_icon("clip-mode", "scissors", "Split mode");
+					buttons += maybe("net", ni.class_id, button_icon("clip-mode", "scissors", "Split mode"));
 				if (_SERVER_CAPS.edit_range)
-					buttons += button_icon("edit-range", "copy", "Edit range of IPs");
+					buttons += button_icon("edit-range", "copy", "Edit range of IPs"); /* XXX maybe what? */
 				if (_SERVER_CAPS.edit_range_list)
-					buttons += button_icon("edit-range-list", "script", "Fill-in range of IPs from a list");
+					buttons += button_icon("edit-range-list", "script", "Fill-in range of IPs from a list"); /* XXX maybe what? */
 				if (_SERVER_CAPS.ipexport)
 					buttons += button_icon("export-csv", "disk", "Export CSV");
 				buttons += '</td>';
@@ -2127,3 +2401,30 @@ function linkify(t)
 	}
 	return t;
 }
+
+function can(what, class_id)
+{
+// XXX debug
+return true;
+	if (_PERMS.superuser)
+		return true;
+	if (class_id) {
+		return (_PERMS.by_class[class_id] && _PERMS.by_class[class_id][what]) || _PERMS[what];
+	} else if (what.match(/^(net|range|ip)$/)) {
+		for (var cn in _PERMS.by_class) {
+			if (_PERMS.by_class.hasOwnProperty(cn) && _PERMS.by_class[cn][what])
+				return true;
+		}
+		return _PERMS[what];
+	} else {
+		return _PERMS[what];
+	}
+}
+
+function maybe(what, class_id, text)
+{
+	if (can(what, class_id))
+		return text;
+	return "";
+}
+

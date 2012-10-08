@@ -16,10 +16,13 @@ use Regexp::Common 'net';
 use Net::DNS;
 use Text::CSV_XS;
 use CGI::Cookie;
+use Data::Dump 'dd', 'pp';
+use Data::Compare ();
 
-our $VERSION = "2011082901";
+our $VERSION = "2012092501";
 our $what   = param("what")   || "root";
 our $id     = param("id")     || 0;
+our $perms;
 
 init();
 if (param("ipexport")) {
@@ -52,6 +55,7 @@ sub handle_config
 		login        => remote_user(),
 		caps         => \%caps,
 		linkify      => \@TIPP::linkify,
+		permissions  => $perms,
 	};
 }
 
@@ -231,6 +235,7 @@ sub handle_new_network
 
 	return { error => "Network must be specified" } unless $net;
 	return { error => "Network class must be specified" } unless $class_id;
+	return { error => "Permission \"net\" denied" } unless perm_check("net", $class_id);
 	return { error => "Network description must be specified" } unless $descr;
 	my $nn = N($net);
 	return { error => "Bad network specification" } unless $nn;
@@ -330,6 +335,8 @@ sub handle_edit_net
 	my $net = db_fetch { my $n : networks;  $n->id == $id;  $n->invalidated == 0; };
 	return { error => "No such network (maybe someone else changed it?)" }
 		unless $net;
+	return { error => "Permission \"net\" denied" } unless perm_check("net", $class_id);
+	return { error => "Permission \"net\" denied" } unless perm_check("net", $net->{class_id});
 	$net->{descr} = u2p($net->{descr});
 	$net->{tags} = fetch_tagstring_for_id($id);
 	my $msg;
@@ -402,6 +409,7 @@ sub handle_merge_net
 	my $net1 = db_fetch { my $n : networks;  $n->net == $merge_with;  $n->invalidated == 0; };
 	return { error => "No neighbouring network (maybe someone else changed it?)" }
 		unless $net1;
+	return { error => "Permission \"net\" denied" } unless perm_check("net", $net0->{class_id});
 	
 	my $n0 = N($net0->{net});
 	my $n1 = N($net1->{net});
@@ -494,6 +502,8 @@ sub handle_edit_class_range
 	my $range = db_fetch { my $cr : classes_ranges;  $cr->id == $id; };
 	return { error => "No such class range (maybe someone else changed it?)" }
 		unless $range;
+	return { error => "Permission \"range\" denied" } unless perm_check("range", $range->{class_id});
+	return { error => "Permission \"range\" denied" } unless perm_check("range", $class_id);
 	$range->{descr} = u2p($range->{descr}||"");
 	my $msg;
 	if ($descr ne $range->{descr} || $range->{class_id} != $class_id) {
@@ -541,6 +551,7 @@ sub handle_add_class_range
 	my $dbh = connect_db();
 	my $class_id = param("class_id");
 	my $descr    = u2p(param("descr"));
+	return { error => "Permission \"range\" denied" } unless perm_check("range", $class_id);
 	my $net = param("range")||"";
 	my $nn = N($net);
 	return { error => "Bad class range specification" } unless $nn;
@@ -621,6 +632,7 @@ sub handle_remove_class_range
 	};
 
 	return { error => "Class range not found!" } unless $range;
+	return { error => "Permission \"range\" denied" } unless perm_check("range", $range->{class_id});
 	return { error => "Class range $range->{net} is not empty!" } if $range->{used};
 
 	my $when = time;
@@ -861,6 +873,16 @@ sub handle_edit_ip
 	return {error => "invalid IP"} unless $ipn;
 	$p{ip} = $ipn->ip;  # our canonical form
 
+	my $dbh = connect_db();
+	my $within = db_fetch {
+		my $n : networks;
+		inet_contains($n->net, $p{ip});
+		$n->invalidated == 0;
+		return $n->net, $n->class_id;
+	};
+	return { error => "The address is outside a valid network" } unless $within;
+	return { error => "Permission \"ip\" denied" } unless perm_check("ip", $within->{class_id});
+
 	if ($containing_net) {
 		my $net = N($containing_net);
 		return {error => "invalid containing network"} unless $net;
@@ -888,7 +910,6 @@ sub handle_edit_ip
 		$need_extras = 1 if $p{$p} ne "";
 	}
 
-	my $dbh = connect_db();
 	my $when = time;
 	my $who = remote_user();
 	db_update {
@@ -938,12 +959,13 @@ sub xhandle_edit_range_list
 sub handle_remove_net
 {
 	my $dbh = connect_db();
-	my $net = db_fetch {
+	my $netinfo = db_fetch {
 		my $n : networks;
 		$n->id == $id;
-		return $n->net;
 	};
-	return {error => "Network not found"} unless $net;
+	return { error => "Network not found" } unless $netinfo;
+	return { error => "Permission \"net\" denied" } unless perm_check("net", $netinfo->{class_id});
+	my $net = $netinfo->{net};
 	my $when = time;
 	my $who = remote_user();
 	db_update {
@@ -1060,6 +1082,7 @@ sub handle_split
 		inet_contains($n->net, $ip);
 	};
 	return {error => "network to split not found"} unless $nf;
+	return { error => "Permission \"net\" denied" } unless perm_check("net", $nf->{class_id});
 	my $net = $nf->{net};
 	my $n = N($net);
 	return {error => "invalid network to split"} unless $n;
@@ -1200,6 +1223,10 @@ sub handle_changelog
 		push @filter, "(text(timestamp with time zone 'epoch' at time zone '$TIPP::timezone' + created * interval '1 second') ilike ? ".
 			"or who ilike ? or change ilike ?)";
 		push @bind, "%$s%", "%$s%", "%$s%";
+	}
+	unless (perm_check("view_changelog")) {
+		push @filter, "who = ?";
+		push @bind, remote_user();
 	}
 
 =pod
@@ -1376,6 +1403,154 @@ sub handle_networks_for_tag
 {
 	my $tag = u2p(param("tag")||"");
 	return fetch_networks_for_tag($tag);
+}
+
+sub handle_fetch_settings
+{
+	my $dbh = connect_db();
+	return { error => "Permission \"superuser\" denied" } unless perm_check("superuser");
+	my @users = db_fetch {
+		my $u : users;
+		sort $u->name;
+	};
+	my @groups = db_fetch {
+		my $g : groups;
+		sort $g->id;
+	};
+	my %groups = map { $_->{id} => $_ } @groups;
+	for my $g (@groups) {
+		$g->{permissions} = expand_permissions(eval { decode_json($g->{permissions}); } || {});
+	}
+	my @classes = db_fetch {
+		my $t : classes;
+		sort $t->ord;
+	};
+	return {
+		users   => \@users,
+		groups  => \%groups,
+		classes => \@classes,
+		default_group => $TIPP::default_group_id,
+	};
+}
+
+sub handle_update_user
+{
+	my $dbh = connect_db();
+	return { error => "Permission \"superuser\" denied" } unless perm_check("superuser");
+	my $user = param("user");
+	return { error => "user parameter is required" } unless defined $user;
+	my $group_id = param("group_id");
+	return { error => "group_id parameter is required" } unless defined $group_id;
+
+	my $old_u = db_fetch {
+		my $u : users;
+		$u->name == $user;
+	};
+	if ($old_u && $old_u->{group_id} == $group_id) {
+		return $old_u;
+	}
+	my $g = db_fetch {
+		my $g : groups;
+		$g->id == $group_id;
+	};
+	return { error => "group_id $group_id not found" } unless $g;
+	if ($old_u) {
+		db_update {
+			my $u : users;
+			$u->name == $user;
+
+			$u->group_id = $group_id;
+		};
+		log_change(user => "Modified user $user, group $group_id", when => time);
+	} else {
+		db_insert 'users', {
+			name        => $user,
+			group_id    => $group_id,
+		};
+		log_change(user => "Created user $user, group $group_id", when => time);
+	}
+	$dbh->commit;
+	my $new_u = db_fetch {
+		my $u : users;
+		$u->name == $user;
+	};
+	return $new_u;
+}
+
+sub handle_update_group
+{
+	return { error => "Permission \"superuser\" denied" } unless perm_check("superuser");
+	my @p = param();
+	my %globals = map { $_ => 1 } qw(superuser view_changelog view_usage_stats);
+	my $gid = param("gid");
+	return { error => "gid parameter is required" } unless defined $gid;
+	my $dbh = connect_db();
+	my $g = {};
+	for my $p (@p) {
+		if ($globals{$p}) {
+			$g->{$p} = param($p);
+		} elsif ($p =~ /^(range|net|ip)-(\d+)$/) {
+			if ($2) {
+				$g->{by_class}{$2}{$1} = param($p);
+			} else {
+				$g->{$1} = param($p);
+			}
+		}
+	}
+	my @extra;
+	if ($gid) {
+		my $old = db_fetch {
+			my $g : groups;
+
+			$g->id == $gid;
+		} || "{}";
+
+		my $old_g = expand_permissions(eval { decode_json($old->{permissions}); } || {});
+		my $new_g = expand_permissions($g);
+		my $comments = param("comments");  $comments = "" unless defined $comments;
+		if (Data::Compare::Compare($old_g, $new_g) && $comments eq $old_g->{comments}) {
+			$old->{permissions} = $old_g;
+			return $old;
+		}
+		my $json_permissions = encode_json($g);
+		db_update {
+			my $g : groups;
+			$g->id == $gid;
+
+			$g->permissions = $json_permissions;
+			$g->comments = $comments;
+		};
+		log_change(group => "Modified group $old->{name}", when => time);
+		$dbh->commit;
+		my $new = $old;
+		$new->{permissions} = $g;
+		$new->{comments} = $comments;
+		return $new;
+	} else {
+		my $group_name = param("name");
+		if (!$group_name) {
+			return { error => "Group name is required" };
+		} elsif ($group_name eq "change me!") {
+			return { error => "Please choose reasonable group name" };
+		}
+		my $comments = param("comments");  $comments = "" unless defined $comments;
+		my $new_id = db_fetch { return `nextval('groups_id_seq')`; };
+		db_insert 'groups', {
+			id			=> $new_id,
+			name        => $group_name,
+			comments    => $comments,
+			permissions => encode_json($g),
+		};
+		log_change(group => "Created group $group_name", when => time);
+		$dbh->commit;
+		my $new = db_fetch {
+			my $g : groups;
+
+			$g->id == $new_id;
+		} || "{}";
+		$new->{permissions} = expand_permissions(eval { decode_json($new->{permissions}); } || {});
+		return $new;
+	}
 }
 
 # === END OF HANDLERS ===
@@ -1884,12 +2059,65 @@ sub fetch_networks_for_tag
 	return \@n;
 }
 
+sub get_permissions
+{
+	my $user = remote_user();
+	my $dbh = connect_db();
+	my $gid = db_fetch {
+		my $u : users;
+
+		$u->name eq $user;
+		return $u->group_id;
+	} || $TIPP::default_group_id;
+
+	my $json_permissions = db_fetch {
+		my $g : groups;
+
+		$g->id == $gid;
+		return $g->permissions;
+	} || "{}";
+
+	return expand_permissions(eval { decode_json($json_permissions); } || {});
+}
+
+sub expand_permissions
+{
+	my $p0 = shift;
+	my $p1 = {};
+	for my $perm (qw(superuser view_changelog view_usage_stats range net ip)) {
+		$p1->{$perm} = $p0->{$perm} || 0;
+	}
+	$p1->{by_class} = {};
+	for my $k (keys %{$p0->{by_class} || {}}) {
+		for my $perm (qw(range net ip)) {
+			$p1->{by_class}{$k}{$perm} = $p0->{by_class}{$k}{$perm} || 0;
+		}
+	}
+	return $p1;
+}
+
+sub perm_check
+{
+	my ($what, $class_id) = @_;
+	return 1 if $perms->{superuser};
+	if ($class_id) {
+		return ($perms->{by_class}{$class_id} && $perms->{by_class}{$class_id}{$what}) || $perms->{$what};
+	} elsif ($what =~ /^(?:net|range|ip)$/) {
+		for my $v (values %{$perms->{by_class}}) {
+			return 1 if $v->{$what};
+		}
+	}
+	return $perms->{$what};
+}
+
 sub log_change
 {
 	my ($what, $change, %p) = @_;
 	$what = "N" if $what eq "network";
 	$what = "R" if $what eq "range";
 	$what = "I" if $what eq "ip";
+	$what = "G" if $what eq "group";
+	$what = "U" if $what eq "user";
 	$what = "?" unless length($what) == 1;
 	my $when = $p{when} || time;
 	my $dbh = connect_db();
@@ -1955,6 +2183,7 @@ sub init
 	my $dbh = connect_db();
 	$dbh->{AutoCommit} = 0;
 	$what =~ s/-/_/g;
+	$perms = get_permissions();
 }
 
 sub done
