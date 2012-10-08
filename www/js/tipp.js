@@ -2404,8 +2404,6 @@ function linkify(t)
 
 function can(what, class_id)
 {
-// XXX debug
-return true;
 	if (_PERMS.superuser)
 		return true;
 	if (class_id) {
