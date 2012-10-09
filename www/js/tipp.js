@@ -378,7 +378,9 @@ function generate_user_edit_form(settings, u)
 function generate_user_edit_link(settings, u)
 {
 	var $li = $('<li><a class="edit-user-link" href="#"><span class="form-icon ui-icon ui-icon-carat-1-e"></span>'
-		+ (u ? u.name : "..[new user]..") + "</a></li>");
+		+ (u ? u.name : "..[new user]..") + "</a>" +
+		(u ? " &nbsp; <span class='user-group'>(" + settings.groups[u.group_id].name + ")</span>" : "") +
+		"</li>");
 	var $el = $li.find("a.edit-user-link");
 	$li.data("shown", false);
 	$el.click(function(ev) {
