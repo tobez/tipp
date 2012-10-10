@@ -151,6 +151,10 @@ div.edit-user {
 	padding: 5px 5px 0px 5px;
 }
 
+span.user-group {
+	font-size: 60%;
+}
+
 td.class-name {
 	vertical-align: top;
 	font-size: 80%;
