@@ -4,6 +4,7 @@ our $db_name = "tipp";
 our $db_host = "127.0.0.1";
 our $db_user = "tipp";
 our $db_pass = "secret";
+our $default_group_id = 1;
 
 our $extra_header = " - development installation";
 
