@@ -78,3 +78,11 @@ create table users (
     group_id    integer
 );
 
+insert into groups values (nextval('groups_id_seq'), 'Default', 'Can only view things', '{}');
+insert into groups values (nextval('groups_id_seq'), 'Superusers', 'Can do everything', '{"superuser":1}');
+
+-- insert into users ('your-admin-user', 2);  -- to have an initial superuser
+
+-- Please note that authentication is NOT handled in any way by TIPP itself.
+-- But in order to use permission system you should have some sort of
+-- external auth.
