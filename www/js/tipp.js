@@ -189,10 +189,10 @@ function generate_group_edit_form(settings, g, classes)
 	 });
 	var $by_class = $edit_group.find("table.class-permissions").find("tbody");
 	$by_class.append(snippet("class-permissions", {
-		"class-name": { text: "default permissions", class: "class-name default" },
-		group_range: { checked: p.range, class: "group_range class-id-0" },
-		group_net: { checked: p.net, class: "group_net class-id-0" },
-		group_ip: { checked: p.ip, class: "group_ip class-id-0" }
+		"class-name": { text: "default permissions", "class": "class-name default" },
+		group_range: { checked: p.range, "class": "group_range class-id-0" },
+		group_net: { checked: p.net, "class": "group_net class-id-0" },
+		group_ip: { checked: p.ip, "class": "group_ip class-id-0" }
 	}));
 	var cn = classes.length;
 	for (var ci = 0; ci < cn; ci++) {
@@ -200,11 +200,11 @@ function generate_group_edit_form(settings, g, classes)
 		$by_class.append(snippet("class-permissions", {
 			"class-name": classes[ci].name,
 			group_range: { checked: p.by_class && p.by_class[class_id] ? p.by_class[class_id].range : 0,
-				class: "group_range class-id-" + class_id },
+				"class": "group_range class-id-" + class_id },
 			group_net  : { checked: p.by_class && p.by_class[class_id] ? p.by_class[class_id].net   : 0,
-				class: "group_net class-id-" + class_id },
+				"class": "group_net class-id-" + class_id },
 			group_ip   : { checked: p.by_class && p.by_class[class_id] ? p.by_class[class_id].ip    : 0,
-				class: "group_ip class-id-" + class_id }
+				"class": "group_ip class-id-" + class_id }
 		}));
 	}
 
