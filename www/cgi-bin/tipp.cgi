@@ -145,7 +145,9 @@ sub handle_net
 				$n->descr, $n->created, $n->created_by,
 				parent_class_id => $cr->class_id,
 				parent_range_id => $cr->id,
-				wrong_class => ($n->class_id != $cr->class_id));
+				wrong_class => ($n->class_id != $cr->class_id),
+				tags_array => tags_array($n->id),
+			);
 		};
 	} else {
 		@c = db_fetch {
@@ -163,7 +165,9 @@ sub handle_net
 				$n->descr, $n->created, $n->created_by,
 				parent_class_id => $cr->class_id,
 				parent_range_id => $cr->id,
-				wrong_class => ($n->class_id != $cr->class_id));
+				wrong_class => ($n->class_id != $cr->class_id),
+				tags_array => tags_array($n->id),
+			);
 		};
 		if ($free) {
 			my @r = db_fetch {
@@ -197,9 +201,9 @@ sub handle_net
 		}
 	}
 	my %c;
-	my $id2tag = fetch_tags_for_networks(@c);
+	#my $id2tag = fetch_tags_for_networks(@c);
 	for my $c (@c) {
-		$c->{tags} = tagref2tagstring($id2tag->{$c->{id}});
+		$c->{tags} = tagref2tagstring($c->{tags_array});
 		$c{$c->{net}} = $c unless $c->{free};
 	}
 	for my $c (@c) {
@@ -217,6 +221,7 @@ sub handle_net
 		}
 		delete $c->{nn};
 		delete $c->{parent_range_id};
+		delete $c->{tags_array};
 		$c->{descr} = u2p($c->{descr}||"");
 		$c->{created_by} ||= "";
 		gen_calculated_params($c);
