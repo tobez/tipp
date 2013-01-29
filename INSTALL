@@ -95,6 +95,10 @@
 
    You will need to set up your own authentication scheme (for now).
 
+   Please note that authentication is NOT handled in any way by TIPP itself.
+   But in order to use the permission/ACL system that TIPP implements you
+   should have some sort of external auth.
+
    Example for Apache 1.3, assuming TIPP will occupy its own virtual host:
 
 	<VirtualHost *>
