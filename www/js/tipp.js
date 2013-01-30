@@ -1090,8 +1090,14 @@ function add_class_link($el, class_id)
 					add_net_link($li, { misclassified: v.misclassified, class_id: v.class_id });
 					continue;
 				}
-				if (v.f == 6)
-					free_space = (100 * (new Number(v.addresses) / (new Number(v.addresses) + new Number(v.used)))).toFixed(1) + "%";
+				if (v.f == 6) {
+					free_space = (100 * (new Number(v.addresses) / (new Number(v.addresses) + new Number(v.used)))).toFixed(1);
+					if (free_space <= 0)
+						free_space = (new Number(0)).toFixed(1);
+					else if (free_space > 100)
+						free_space = (new Number(100)).toFixed(1);
+					free_space = "" + free_space + "%";
+				}
 				var $li = $("<li class='class-range'>" +
 					"<div>" +
 					// XXX this fixed width is unsatisfactory for IPv6
