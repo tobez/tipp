@@ -468,7 +468,7 @@ function stat_view()
 	remote({what: "top-level-nets"}, function (res) {
 		var $div = $("<div class='linklist' id='main-content'></div>");
 		$div.append($("<h2>IPv4 Usage Statistics (network based)</h2>"));
-		var $table = $("<table class='networks'><tr><th>Supernet</th><th>Total IPs</th><th>Used IPs</th><th>Free IPs</th></tr></table>");
+		var $table = $("<table class='networks'><tr><th>Supernet</th><th>Total IPs</th><th>Used IPs</th><th>Free IPs</th><th>Percent Used</th></tr></table>");
 		$div.append($table);
 		$("#view").append($div);
 		$div.show();
@@ -483,12 +483,13 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
 		// finalize
 
 		$div.append($("<h2>IPv4 usage statistics (category based)</h2>"));
-		var $table = $("<table class='networks'><tr><th>Category</th><th>Total IPs</th><th>Used IPs</th><th>Free IPs</th></tr></table>");
+		var $table = $("<table class='networks'><tr><th>Category</th><th>Total IPs</th><th>Used IPs</th><th>Free IPs</th><th>Percent Used</th></tr></table>");
 		for (var class_name in _STATS_BY_CLASS) {
 			var $tr = $("<tr class='network'><td class='network'>" + class_name + "</td><td class='ip'>" +
 				_STATS_BY_CLASS[class_name].total + "</td><td class='ip'>" +
 				_STATS_BY_CLASS[class_name].used + "</td><td class='ip'>" +
-				_STATS_BY_CLASS[class_name].unused + "</td></tr>");
+				_STATS_BY_CLASS[class_name].unused + "</td><td class='ip'>" +
+				(100 * _STATS_BY_CLASS[class_name].used / _STATS_BY_CLASS[class_name].total).toFixed(1) + "% </td></tr>");
 			$table.append($tr);
 		}
 		$table.find('tr.network:nth-child(even)').addClass('alt-row');
@@ -545,7 +546,7 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
 					_STATS_BY_CLASS[net.class_name].total += net.sz;
 					if (net.free == 1) {
 						ip_free += net.sz;
-						if (!net.private && net.bits < 24) { // a bit arbitrary
+						if (!net.private && net.bits < 25) { // a bit arbitrary
 							if (!_BIGFREE[net.bits]) _BIGFREE[net.bits] = [];
 							_BIGFREE[net.bits].push(net);
 						}
@@ -563,7 +564,8 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
 				var $tr = $("<tr class='network'><td class='network'>" + res[i] + "</td><td class='ip'>" +
 					ip_total + "</td><td class='ip'>" +
 					ip_used + "</td><td class='ip'>" +
-					ip_free + "</td></tr>");
+					ip_free + "</td><td class='ip'>" +
+					(100 * ip_used / ip_total).toFixed(1) + "% </td></tr>");
 				if (net.private)
 					$tr.find(".network").addClass('noteworthy').tooltip({ 
 						cssClass: "tooltip",
