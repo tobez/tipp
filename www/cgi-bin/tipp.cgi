@@ -2237,7 +2237,7 @@ sub calculate_gaps
 	for my $r (@r) {
 		my ($f, $l) = @$r;
 		my $len = $f->masklen;
-		while ($f < $l) {
+		while ($f <= $l) {
 			while ($f->network < $f || $f->broadcast > N($l->addr . "/" . $f->masklen)) {
 				$f = N($f->addr . "/" . ($f->masklen + 1));
 			}
