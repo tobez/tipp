@@ -1621,36 +1621,40 @@ sub search_networks
 	my @net_sql = ('n.invalidated = 0', 'n.class_id = c.id', 'cr.net >>= n.net');
 	my @net_bind;
 	for my $t (@s) {
+		my $term_sql;
 		if ($t =~ /^(\d+)\.$/ && $1 > 0 && $1 <= 255) {
-			push @net_sql, "n.net <<= ?";
+			$term_sql = "n.net <<= ?";
 			push @net_bind, "$1.0.0.0/8";
 		} elsif ($t =~ /^(\d+)\.(\d+)\.?$/ && $1 >0 && $1 <= 255 && $2 <= 255) {
-			push @net_sql, "(n.net <<= ? or n.net >>= ?)";
+			$term_sql = "(n.net <<= ? or n.net >>= ?)";
 			push @net_bind, "$1.$2.0.0/16", "$1.$2.0.0/16";
 		} elsif ($t =~ /^(\d+)\.(\d+)\.(\d+)\.?$/ && $1 >0 && $1 <= 255 && $2 <= 255 && $3 <= 255) {
-			push @net_sql, "(n.net <<= ? or n.net >>= ?)";
+			$term_sql = "(n.net <<= ? or n.net >>= ?)";
 			push @net_bind, "$1.$2.$3.0/24", "$1.$2.$3.0/24";
 		} elsif ($t =~ /^$RE{net}{IPv4}$/) {
-			push @net_sql, "(n.net >>= ?)";
+			$term_sql = "(n.net >>= ?)";
 			push @net_bind, $t;
 		} elsif ($t =~ /^$RE{net}{IPv4}\/(\d+)$/ && $1 <= 32) {
-			push @net_sql, "(n.net <<= ? or n.net >>= ?)";
+			$term_sql = "(n.net <<= ? or n.net >>= ?)";
 			push @net_bind, $t, $t;
 		} else {
 			my $nn = N($t);
 			if ($nn && $nn->version == 6) {
 				if ($nn->masklen < 128) {
-					push @net_sql, "(n.net <<= ? or n.net >>= ?)";
-					push @net_bind, "$nn", "$nn";
+					$term_sql = "(n.net <<= ? or n.net >>= ?)";
+					@net_bind, "$nn", "$nn";
 				} else {
-					push @net_sql, "(n.net >>= ?)";
+					$term_sql = "(n.net >>= ?)";
 					push @net_bind, "$nn";
 				}
-			} else {
-				push @net_sql, "n.descr ilike ?";
-				push @net_bind, "%$t%";
 			}
 		}
+		if ($term_sql) {
+			push @net_sql, "(($term_sql) or (n.descr ilike ?))";
+		} else {
+			push @net_sql, "n.descr ilike ?";
+		}
+		push @net_bind, "%$t%";
 	}
 	my $dbh = connect_db();
 	my @n = @{
@@ -1721,48 +1725,42 @@ sub search_ips
 	}
 	my @ip_bind;
 	for my $t (@s) {
-		if (@s > 1 && $t =~ /^(\d+)\.$/ && $1 > 0 && $1 <= 255) {
-			push @ip_sql, "i.ip <<= ?";
+		my @term_sql;
+		my $nn = N($t);
+		if ($t =~ /^(\d+)\.$/ && $1 <= 255) {
+			# class A
+			push @term_sql, "i.ip <<= ?";
 			push @ip_bind, "$1.0.0.0/8";
-		} elsif (@s > 1 && $t =~ /^(\d+)\.(\d+)\.?$/ && $1 >0 && $1 <= 255 && $2 <= 255) {
-			push @ip_sql, "i.ip <<= ?";
+		} elsif ($t =~ /^(\d+)\.(\d+)(\.?)$/ && $1 <= 255 && $2 <= 255) {
+			# class B
+			push @term_sql, "i.ip <<= ?";
 			push @ip_bind, "$1.$2.0.0/16", $t;
-		} elsif (@s > 1 && $t =~ /^(\d+)\.(\d+)\.(\d+)\.?$/ && $1 >0 && $1 <= 255 && $2 <= 255 && $3 <= 255) {
-			push @ip_sql, "i.ip <<= ?";
+			# last two octets of an IPv4
+			unless ($3) {
+				push @term_sql, "text(i.ip) like ?";
+				push @ip_bind, "%$t/32";
+			}
+		} elsif ($t =~ /^(\d+)\.(\d+)\.(\d+)(\.?)$/ && $1 <= 255 && $2 <= 255 && $3 <= 255) {
+			# class C
+			push @term_sql, "i.ip <<= ?";
 			push @ip_bind, "$1.$2.$3.0/24";
-		} elsif ($t =~ /^$RE{net}{IPv4}$/) {
-			push @ip_sql, "i.ip = ?";
-			push @ip_bind, $t;
-		} elsif (@s > 1 && $t =~ /^$RE{net}{IPv4}\/(\d+)$/ && $1 <= 32) {
-			push @ip_sql, "i.ip <<= ?";
-			push @ip_bind, $t;
-		} else {
-			my $nn = N($t);
-			my $already_looking;
-			if ($nn && $nn->version == 6) {
-				if ($nn->masklen == 128) {
-					$already_looking = 1;
-					push @ip_sql, "i.ip = ?";
-					push @ip_bind, $nn->ip;
-				} elsif (@s > 1) {
-					$already_looking = 1;
-					push @ip_sql, "i.ip <<= ?";
-					push @ip_bind, "$nn";
-				}
+			# last three octets of an IPv4
+			unless ($4) {
+				push @term_sql, "text(i.ip) like ?";
+				push @ip_bind, "%$t/32";
 			}
-			unless ($already_looking) {
-				my @or = map { "$_ ilike ?" } qw(i.descr e.location e.phone e.owner e.hostname e.comments);
-				push @ip_bind, ("%$t%") x 6;
-				if ($t =~ /^(\d+)\.(\d+)$/ && $1 <= 255 && $2 <= 255) {
-					push @or, "text(i.ip) like ?";
-					push @ip_bind, "%$t/32";
-				} elsif ($t =~ /^(\d+)\.(\d+)\.(\d+)$/ && $1 <= 255 && $2 <= 255 && $3 <= 255) {
-					push @or, "text(i.ip) like ?";
-					push @ip_bind, "%$t/32";
-				}
-				push @ip_sql, "(" . join(" or ", @or) . ")";
-			}
+		} elsif ($nn && $nn->bits == $nn->masklen) {
+			# host
+			push @term_sql, "i.ip = ?";
+			push @ip_bind, $nn->ip;
+		} elsif ($nn) {
+			# network
+			push @term_sql, "i.ip <<= ?";
+			push @ip_bind, "$nn";
 		}
+		push @term_sql, map { "$_ ilike ?" } qw(i.descr e.location e.phone e.owner e.hostname e.comments);
+		push @ip_bind, ("%$t%") x 6;
+		push @ip_sql, "(" . join(" or ", @term_sql) . ")";
 	}
 	my $dbh = connect_db();
 	my @i = @{
