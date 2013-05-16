@@ -151,16 +151,48 @@ function net_view()
 		var n = res.length;
 		for (var i = 0; i < n; i++) {
 			var v = res[i];
-			var $li = $("<li><a href='#' class='show-net with-free without-free'>" +
+			var $li = $("<li class='class-range'><div>" +
+				"<a href='#' class='show-net with-free without-free td-like' style='width: 14em;'>" +
 				'<span class="form-icon ui-icon ui-icon-carat-1-e"></span>' +
-				v + "</a></li>");
+				v + "</a>" + 
+				"<span class='netinfo td-like' style='width: 1em;'></span>" +
+				'<span class="buttons td-like">' + 
+				button_icon("export-csv", "disk", "Export CSV") +
+				"</span>" +
+				"</div></li>");
 			$ul.append($li);
+			add_export_csv($li, {net: v}, 1, 1);
 			add_net_link($li, { class_range_id: null, limit: v });
 		}
 		$("#view").append($div);
 		$div.slideDown("fast");
 	});
 }
+
+/*
+				var $li = $("<li class='class-range'>" +
+					"<div>" +
+					// XXX this fixed width is unsatisfactory for IPv6
+					// XXX maybe this <li> should be table-like
+					"<a href='#' class='show-net without-free td-like' style='width: 14em;'>" +
+					'<span class="form-icon ui-icon ui-icon-carat-1-e"></span>' +
+					v.net + "</a>" +
+					"<span class='netinfo td-like' style='width: 7em;'> " +
+					"<a href='#' class='show-net with-free'>" + free_space + " free</a>" +
+					"</span>" +
+					'<span class="buttons td-like">' + 
+					maybe("range", class_id, button_icon("edit-range", "document", "Edit range")) +
+					(v.addresses == 0 ? "" :
+					' ' + maybe("net", class_id, button_icon("allocate", "plus", "Allocate network in this range"))) +
+					(v.used != 0 ? "" :
+					' ' + maybe("range", class_id, button_icon("delete-range", "close", "Delete this range"))) +
+					(v.used == 0 ? "" :
+					' ' + button_icon("export-csv", "disk", "Export CSV")) +
+					"</span>" +
+					'<span class="description td-like">' + v.descr +
+					"</span>" +
+					"<span class='extras-here'></span></div></li>");
+*/
 
 function tag_view()
 {
@@ -1627,17 +1659,17 @@ function add_edit_range_list($pages, ni)
 	});
 }
 
-function add_export_csv($pages, ni, range)
+function add_export_csv($pages, ni, range, with_free)
 {
 	$pages.find(".export-csv").click(function (ev) {
 		clear_selection();
 		ev.preventDefault();
 		ev.stopPropagation();
-		export_csv_dialog(ni, range);
+		export_csv_dialog(ni, range, with_free);
 	});
 }
 
-function export_csv_dialog(ni, range)
+function export_csv_dialog(ni, range, with_free)
 {
 	var columns = {
 		C:	"Network class",
@@ -1708,7 +1740,10 @@ function export_csv_dialog(ni, range)
 	}).disableSelection();
 	var extra = "";
 	if (range) {
-		extra = "&range=1";
+		extra += "&range=1";
+	}
+	if (with_free) {
+		extra += "&with_free=1";
 	}
 	$dialog.dialog({
 		autoOpen:	true,
@@ -1716,9 +1751,13 @@ function export_csv_dialog(ni, range)
 		width:		400,
 		buttons:	{
 			Ok: function () {
+				var ignore_ip = $dialog.find(".ignore_ip").attr("checked");
+				ignore_ip = ignore_ip ? 1 : 0;
 				$(this).dialog('close');
 				var d = new Date();
-				window.open(_URL + "?ipexport=" + ni.id + extra + "&when=" + d.valueOf() , "ipexport" );
+				window.open(_URL + "?ipexport=" + ni.net +
+					extra + "&ignore_ip=" + ignore_ip +
+					"&when=" + d.valueOf(), "ipexport" );
 			},
 			Cancel: function () { $(this).dialog('close'); }}
 	});
