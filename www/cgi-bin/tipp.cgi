@@ -1839,12 +1839,19 @@ sub do_ipexport_net
 		return $n, class_name => $c->name;
 	};
 	if ($p{with_free} && !$net) {
+		my $cn = db_fetch {
+			my $cr : classes_ranges;
+			my $c : classes;
+			inet_contains($cr->net, $net_net);
+			$cr->class_id == $c->id;
+			return $c->name;
+		};
 		$net = {
 			id         => 0,
 			net        => $net_net,
 			class_id   => 0,
 			descr      => "[free]",
-			class_name => "unknown",
+			class_name => $cn || "unknown",
 		};
 	}
 	return { error => "No such network (maybe someone else changed it?)" }
