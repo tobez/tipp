@@ -2354,6 +2354,12 @@ function is_net_ok(net)
 {
 	if (net.match(/^(\d+\.\d+\.\d+\.\d+\/\d+)$/)) {
 		return true;
+	} else if (net.match(/^(\d+\.\d+\.\d+\/24)$/)) {
+		return true;
+	} else if (net.match(/^(\d+\.\d+\/16)$/)) {
+		return true;
+	} else if (net.match(/^(\d+\/8)$/)) {
+		return true;
 	} else if (net.match(/^([\da-fA-F]+(:[\da-fA-F]+){7}\/\d+)$/)) {
 		return true;
 	} else if (net.match(/^([\da-fA-F]+(:[\da-fA-F]+)*::\/\d+)$/)) {
