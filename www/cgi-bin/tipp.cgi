@@ -1019,6 +1019,7 @@ sub handle_suggest_network
 	return {error=>"Invalid network size"} unless $sz >= 8 && $sz <= 128;
 	my (%cr, @all);
 	my $dbh = connect_db();
+	my $ipv6_only = $sz > 32;
 	if ($limit) {
 		my $n_limit = N($limit);
 		return {error=>"Invalid network limit"} unless $n_limit;
@@ -1028,6 +1029,7 @@ sub handle_suggest_network
 
 			inet_contains($limit, $n->net);
 			$n->invalidated == 0;
+			family($n->net) == 6 if $ipv6_only;
 
 			return $n->net;
 		};
@@ -1041,6 +1043,7 @@ sub handle_suggest_network
 			join $cr < $n => db_fetch {
 				inet_contains($cr->net, $n->net);
 				$n->invalidated == 0;
+				family($n->net) == 6 if $ipv6_only;
 			};
 
 			return range => $cr->net, net => $n->net;
