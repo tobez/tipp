@@ -1040,6 +1040,7 @@ sub handle_suggest_network
 			my $n : networks;
 
 			$cr->class_id == $id;
+			family($cr->net) == 6 if $ipv6_only;
 			join $cr < $n => db_fetch {
 				inet_contains($cr->net, $n->net);
 				$n->invalidated == 0;
@@ -1075,7 +1076,7 @@ sub handle_suggest_network
 		}
 		$check_sz--;
 	}
-	return {error=>"Cannot find a free network of size $sz" . ($limit ? " inside $limit" : "")};
+	return {error=>"Cannot find a free " . ($ipv6_only ? "IPv6 " : "") . "network of size $sz" . ($limit ? " inside $limit" : "")};
 }
 
 sub handle_split
