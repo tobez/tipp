@@ -1576,12 +1576,14 @@ sub gen_calculated_params
 	$c->{sz}           = 2**($n->bits-$n->masklen);
 	$c->{bits}         = $n->masklen;
 	$c->{f}            = $n->version;
-	if ($c->{net} =~ /^10\.|^172\.|^192\.168\./) {
+	if ($c->{net} =~ /^10\.|^172\.|^192\.168\.|^100\./) {
 		if ($c->{net} =~ /^10\./) {
 			$c->{private} = 1;
 		} elsif ($c->{net} =~ /^172\.(\d+)\./ && $1 >= 16 && $1 <= 31) {
 			$c->{private} = 1;
 		} elsif ($c->{net} =~ /^192\.168\./) {
+			$c->{private} = 1;
+		} elsif ($c->{net} =~ /^100\.(\d+)\./ && $1 >= 64 && $1 <= 127) {
 			$c->{private} = 1;
 		}
 	}
