@@ -1656,11 +1656,11 @@ sub search_networks
 			}
 		}
 		if ($term_sql) {
-			push @net_sql, "(($term_sql) or (n.descr ilike ?))";
+			push @net_sql, "(($term_sql) or (n.descr ilike ?) or (n.id in (select net_id from network_tags where tag ilike ?)))";
 		} else {
-			push @net_sql, "n.descr ilike ?";
+			push @net_sql, "((n.descr ilike ?) or (n.id in (select net_id from network_tags where tag ilike ?)))";
 		}
-		push @net_bind, "%$t%";
+		push @net_bind, "%$t%", "%$t%";
 	}
 	my $dbh = connect_db();
 	my @n = @{
