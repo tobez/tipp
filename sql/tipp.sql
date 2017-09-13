@@ -3,11 +3,6 @@ returns boolean as $$
 	select $1 >>= $2
 $$ language SQL;
 
-create function tags_array(integer)
-returns text[] as $$
-	select ARRAY(select tag from network_tags where net_id = $1)
-$$ language SQL;
-
 create table classes (
 	id			integer primary key,
 	name		text,
@@ -82,6 +77,11 @@ create table users (
     name text primary key,
     group_id    integer
 );
+
+create function tags_array(integer)
+returns text[] as $$
+	select ARRAY(select tag from network_tags where net_id = $1)
+$$ language SQL;
 
 insert into groups values (nextval('groups_id_seq'), 'Default', 'Can only view things', '{}');
 insert into groups values (nextval('groups_id_seq'), 'Superusers', 'Can do everything', '{"superuser":1}');
