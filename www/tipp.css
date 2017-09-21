@@ -71,6 +71,11 @@ h2 {
 	padding-left: 15px;
 }
 
+.smaller {
+	font-size: 10px;
+	color: #777;
+}
+
 #navigation-form td {
 	padding-right: 10px;
 }
