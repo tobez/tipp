@@ -603,7 +603,7 @@ function add_stat_line($div, $table, res, i, n, all_total, all_used)
 						cssClass: "tooltip",
 						xOffset:  10,
 						yOffset:  30,
-						content:  '<a href="http://tools.ietf.org/html/rfc1918">RFC1918</a> range'
+						content:  '<a href="http://tools.ietf.org/html/'+ net.private +'">'+ net.private +'</a> range'
 					});
 				$table.append($tr);
 				$table.find('tr.network:nth-child(even)').addClass('alt-row');
