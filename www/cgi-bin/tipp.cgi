@@ -194,6 +194,11 @@ sub handle_net
 						$cname = $r->{class_name};
 						last;
 					}
+					if ($c->contains($r->{nn})) {
+						$cid = $r->{class_id};
+						$cname = $r->{class_name};
+						last;
+					}
 				}
 				push @m, { net => "$c", nn => $c, free => 1, id => 0, class_name => $cname, class_id => $cid };
 			}
