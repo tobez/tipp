@@ -1218,6 +1218,51 @@ sub handle_split
 	}
 }
 
+sub handle_split_class_range
+{
+	my $id = param("id") || "";
+	return { error => "split class id must be specified" } unless $id;
+
+	my $dbh = connect_db();
+	my $cf  = db_fetch {
+		my $cr : classes_ranges;
+		$cr->id == $id;
+	};
+	return { error => "class range to split not found" } unless $cf;
+	return { error => "Permission \"class\" denied" } unless perm_check( "class", $cf->{class_id} );
+
+	my $net = N($cf->{net});
+	my $l = $net->masklen;
+	my $nl = $l + 1;
+	return { error => "class range to split should be larger than a /30" } unless $l < 31;
+
+	my $n = $net->splitref($nl);
+	my $when  = time;
+	my $descr = $cf->{descr};
+	if ( param("confirmed") ) {
+		$descr = "[split] $descr" unless $descr =~ /^\[split\]/;
+		for my $nn (@$n) {
+			my $new_id = db_fetch { return `nextval('classes_ranges_id_seq')`; };
+			db_insert 'classes_ranges',
+			  {
+				  id       => $new_id,
+				  net      => $nn,
+				  class_id => $cf->{class_id},
+				  descr    => $descr,
+			  };
+			log_change( range => "Added range class $nn (via split)", when => $when );
+		}
+
+		db_delete { classes_ranges->id == $id };
+		log_change( range => "Removed range $net (via split)", when => $when );
+		$dbh->commit;
+		return { msg => "Range $net successfully split", n => $n };
+	} else {
+		@$n = map {"$_"} @$n;
+		return { n => $n, o => "$net" };
+	}
+}
+
 sub handle_changelog
 {
 	my $filter = param("filter") || "";

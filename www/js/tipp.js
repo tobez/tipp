@@ -1144,6 +1144,7 @@ function add_class_link($el, class_id)
 					"</span>" +
 					'<span class="buttons td-like">' + 
 					maybe("range", class_id, button_icon("edit-range", "document", "Edit range")) +
+					' ' + maybe("range", class_id, button_icon("split-range", "scissors", "Split range")) +
 					(v.addresses == 0 ? "" :
 					' ' + maybe("net", class_id, button_icon("allocate", "plus", "Allocate network in this range"))) +
 					(v.used != 0 ? "" :
@@ -1159,6 +1160,7 @@ function add_class_link($el, class_id)
 				class_range_net_link($li);
 				class_range_edit_link($li);
 				class_range_remove_link($li);
+				class_range_split_link($li);
 				add_export_csv($li, v, 1);
 				if (v.addresses > 0)
 					$li.find("a.with-free").addClass("has-free-space");
@@ -1212,6 +1214,32 @@ function class_range_remove_link($li, ev)
 			remote({what: "remove-class-range", id: v.id}, function (res) {
 				message(res.msg);
 				$li.slideUp("fast", function () { $li.remove(); });
+			});
+		});
+	});
+}
+
+function class_range_split_link($li, ev)
+{
+	$li.find(".split-range").click(function(ev) {
+		ev.preventDefault();
+		ev.stopPropagation();
+		clear_selection();
+		var v = $li.data("@net");
+		remote({what: "split-class-range", id: v.id}, function (res) {
+			var msg = "<p>Class range <strong>" + res.o + "</strong> will be split into the following:</p><p class='netlist'>";
+			var n = res.n.length;
+			for (var i = 0; i < n; i++) {
+				var vv = res.n[i];
+				msg += vv + "<br/>";
+			}
+			msg += "</p><p>Are you sure you want to proceed?</p>";
+
+			ask(msg, function () {
+				remote({what: "split-class-range", id: v.id, confirmed: 0}, function (res) {
+					message(res.msg);
+					$li.slideUp("fast", function () { $li.remove(); });
+				});
 			});
 		});
 	});
