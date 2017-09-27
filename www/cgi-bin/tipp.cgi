@@ -1007,8 +1007,9 @@ sub handle_search
 	my @s = grep { $_ ne "" } split /\s+/, $s;
 	return {error => "blank search string"} unless @s;
 
-	my %r = (search_networks(@s), search_ips(0, @s), search_ips(1, @s));
+	my %r = (search_networks(0, @s), search_networks(1, @s), search_ips(0, @s), search_ips(1, @s));
 	$r{n}  ||= [];
+	$r{hn} ||= [];
 	$r{i}  ||= [];
 	$r{hi} ||= [];
 	return \%r;
@@ -1671,10 +1672,18 @@ sub get_ip_info
 
 sub search_networks
 {
-	my @s = @_;
+	my ($history, @s) = @_;
 	my $only = param("only") || "";
 	return () if $only && $only ne "net";
-	my @net_sql = ('n.invalidated = 0', 'n.class_id = c.id', 'cr.net >>= n.net');
+	my @net_sql = ('n.class_id = c.id', 'cr.net >>= n.net');
+	my $name;
+	if ($history) {
+		push @net_sql, 'n.invalidated <> 0';
+		$name = "hn";
+	} else {
+		push @net_sql, 'n.invalidated = 0';
+		$name = "n";
+	}
 	my @net_bind;
 	for my $t (@s) {
 		my $term_sql;
@@ -1726,7 +1735,7 @@ sub search_networks
 		my $id2tag = fetch_tags_for_networks(@n);
 		my @ids = map { $_->{id} } @n;
 		my %used;
-		if (@n) {
+		if (@n && !$history) {
 			%used = db_fetch {
 				my $n : networks;
 				my $i : ips;
@@ -1748,18 +1757,19 @@ sub search_networks
 			gen_calculated_params($n);
 			$n->{used} = $used{$n->{id}}||0;
 			$n->{unused} = $n->{sz} - $n->{used};
+			$n->{historic} = $history;
 			if ($n->{f} == 4) {
 				$tot_size += $n->{sz};
 				$tot_used += $n->{used};
 				$tot_free += $n->{unused};
 			}
 		}
-		return (n => \@n, nn => scalar(@n),
-			v4_used => $tot_used,
-			v4_free => $tot_free,
-			v4_size => $tot_size);
+		return ($name => \@n, "n$name" => scalar(@n),
+			"v4_used_$name" => $tot_used,
+			"v4_free_$name" => $tot_free,
+			"v4_size_$name" => $tot_size);
 	} else {
-		return (nn => scalar(@n),
+		return ("n$name" => scalar(@n),
 			net_message => "Too many networks found, try to limit the search, or {view all results anyway}.");
 	}
 }

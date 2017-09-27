@@ -641,7 +641,7 @@ function search()
 		if (res.n.length != 0) {
 			$div.append($("<h2>Matching networks (" + res.nn +
 				");  <font size='smaller'>IPv4 addresses/used/free: " +
-				res.v4_size + "/" + res.v4_used + "/" + res.v4_free +
+				res.v4_size_n + "/" + res.v4_used_n + "/" + res.v4_free_n +
 				"</font></h2>"));
 		} else {
 			$div.append($("<h2>Matching networks (" + res.nn + ")</h2>"));
@@ -649,6 +649,8 @@ function search()
 		network_search_results($div, res);
 		$div.append($("<h2>Matching IP addresses (" + res.ni + ")</h2>"));
 		ip_search_results($div, res);
+		$div.append($("<h2>Matching historic networks (" + res.nhn + ")</h2>"));
+		network_history_search_results($div, res);
 		$div.append($("<h2>Matching historic IP addresses (" + res.nhi + ")</h2>"));
 		ip_history_search_results($div, res);
 		$("#view").append($div);
@@ -667,6 +669,21 @@ function network_search_results($div, res)
 	var n = res.n.length;
 	for (var i = 0; i < n; i++) {
 		$tab.append(insert_network(res.n[i]));
+	}
+	$tab.find('tr.network:nth-child(even)').addClass('alt-row');
+}
+
+function network_history_search_results($div, res)
+{
+	if (res.hn.length == 0 && !res.net_message)
+		res.net_message = "No matches.";
+	if (res.net_message)
+		$div.append(possibly_full_search("net", res.net_message));
+	var $tab  = $("<table class='networks'></table>");
+	$div.append($tab);
+	var n = res.hn.length;
+	for (var i = 0; i < n; i++) {
+		$tab.append(insert_network(res.hn[i]));
 	}
 	$tab.find('tr.network:nth-child(even)').addClass('alt-row');
 }
@@ -1357,15 +1374,20 @@ function insert_network(v)
 		if (v.f == 4 && (v.used || v.unused)) {
 			extra = "<span class='usage_stats'>" + v.sz + "/" + v.used + "/" + v.unused + "</span>&nbsp;&nbsp;";
 		}
-		$ni = $("<tr class='network can-select'><td class='network'>" +
+		ni = "<tr class='network can-select'><td class='network'>" +
 			"<form class='button-form'>" +
 			maybe("net", v.class_id, '<a class="edit-button" href="#" title="Edit"><span class="form-icon ui-icon ui-icon-document"></span></a> ') +
-			'<span>' +
-			"<a class='address-link' href='#'>" + v.net + "</a>" +
-			"</span></form></td><td class='class_name'>" + extra +
+			'<span>';
+		if (v.historic == 1) {
+			ni = ni + v.net;
+		} else {
+			ni = ni + "<a class='address-link' href='#'>" + v.net + "</a>";
+		}
+		ni = ni + "</span></form></td><td class='class_name'>" + extra +
 			"<span class='netinfo class_name'> " + v.class_name + "</span>" +
 			"</td><td class='description'>" +
-			"<span class='netinfo'>" + linkify(v.descr) + "</span></td></tr>");
+			"<span class='netinfo'>" + linkify(v.descr) + "</span></td></tr>";
+		$ni = $(ni);
 	}
 	if (v.wrong_class == 1) {
 		$ni.find("span.class_name").addClass("noteworthy").tooltip({ 
@@ -1378,7 +1400,9 @@ function insert_network(v)
 	}
 	clear_selection();
 	$ni.data("@net", v).find(".edit-button").click(function(ev){edit_network($ni, ev)});
-	add_address_link($ni);
+	if (v.historic == 0) {
+		add_address_link($ni);
+	}
 	return $ni;
 }
 
