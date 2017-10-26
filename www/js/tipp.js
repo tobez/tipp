@@ -1401,7 +1401,7 @@ function insert_network(v)
 	}
 	clear_selection();
 	$ni.data("@net", v).find(".edit-button").click(function(ev){edit_network($ni, ev)});
-	if (v.historic == 0) {
+	if (v.historic !== 1) {
 		add_address_link($ni);
 	}
 	return $ni;
