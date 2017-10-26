@@ -919,10 +919,11 @@ function add_network($where)
 			'<tr><td class="label">Tags:</td><td>' +
 			'<input type="text" size="64" maxlength="256" class="network-tags"/>' +
 			'</td></tr>' +
-			'</table><p>' +
-			"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
-			"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/></p>" +
-			'</div></form></div>';
+			'</table>' +
+			'<table class="commands"><tr>' +
+			"<td><input class='ok-button' type='image' src='images/notification_done.png' title='Save'/></br><span class='smaller'>Save</span></td>" +
+			"<td><input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/></br><span class='smaller'>Cancel</span></td>" +
+			'</tr></table></div></form></div>';
 		var $form = $(form);
 		var $insert = $form;
 		$form.hide();
@@ -1051,11 +1052,11 @@ function add_class_range()
 			'<tr><td class="label">Description:</td><td>' +
 			'<input type="text" size="64" maxlength="256" class="class-range-description"/>' +
 			'</td></tr>' +
-			'</table><p>' +
-			"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
-			"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/>" +
-			"</p>" +
-			'</div></form></div>';
+			'</table>' +
+			'<table class="commands"><tr>' +
+			"<td><input class='ok-button' type='image' src='images/notification_done.png' title='Save'/></br><span class='smaller'>Save</span></td>" +
+			"<td><input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/></br><span class='smaller'>Cancel</span></td>" +
+			'</tr></table></div></form></div>';
 		var $form = $(form);
 		$form.hide();
 		$("#view").prepend($form);
@@ -1270,11 +1271,11 @@ function edit_class_range($li)
 		'<table><tr><td class="label">Class:</td><td>' +
 		gen_class_input(v.class_id, "range") + '</td></tr><tr><td class="label">Description:</td><td>' +
 		'<input type="text" size="64" maxlength="256" class="class-range-description"/>' +
-		'</td></tr></table><p>' +
-		"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
-		"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/>" +
-		"</p>" +
-		'</div></form></div>';
+		'</td></tr></table>' +
+		'<table class="commands"><tr>' +
+		"<td><input class='ok-button' type='image' src='images/notification_done.png' title='Save'/></br><span class='smaller'>Save</span></td>" +
+		"<td><input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/></br><span class='smaller'>Cancel</span></td>" +
+		'</tr></table></div></form></div>';
 	var $form = $(form);
 	$form.hide();
 	$form.find(".class-range-description").val(v.descr);
@@ -1500,15 +1501,19 @@ function edit_network($li, ev)
 		'<tr><td class="label">Tags:</td><td>' +
 		'<input type="text" size="64" maxlength="256" class="network-tags"/>' +
 		'</td></tr>' +
-		'</table><p>' +
-		"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
-		"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/> &nbsp; &nbsp; " +
-		"<input class='history-button' type='image' src='images/clock.png' title='History'/> &nbsp; &nbsp; " +
-		maybe("net", v.class_id, "<input class='remove-button' type='image' src='images/notification_remove.png' title='Remove'/>");
+		'</table>' +
+		'<table class="commands"><tr>' +
+		"<td><input class='ok-button' type='image' src='images/notification_done.png' title='Save'/></br><span class='smaller'>Save</span></td>" +
+		"<td><input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/></br><span class='smaller'>Cancel</span></td>" +
+		"<td>&nbsp;&nbsp;</td>" +
+		"<td><input class='history-button' type='image' src='images/clock.png' title='History'/></br><span class='smaller'>History</span></td>" +
+		"<td>&nbsp;&nbsp;</td>" +
+		maybe("net", v.class_id, "<td><input class='remove-button' type='image' src='images/notification_remove.png' title='Remove'/></br><span class='smaller'>Remove</span></td>");
 	if (v.merge_with && can("net", v.class_id))
-		form += "&nbsp;&nbsp;<input class='merge-button' type='image' src='images/load_download.png' title='Merge with " +
-		v.merge_with + "'/>";
-	form += '</p></div></form></div></td></tr>';
+		form += "<td>&nbsp;&nbsp;</td>" +
+		"<td><input class='merge-button' type='image' src='images/load_download.png' title='Merge with " +
+		v.merge_with + "'/></br><span class='smaller'>Merge</span></td>";
+	form += '</tr></table></div></form></div></td></tr>';
 	var $form = $(form);
 	$form.find("div.edit-header").hide();
 	$form.find(".network-description").val(v.descr);
@@ -1659,11 +1664,12 @@ function add_edit_range($pages, ni)
 			'<tr><td class="label">Comments:</td><td>' + 
 			'<textarea rows=6 cols=64 class="ip-comments"></textarea></td></tr>' +
 			'</table>' +
-			'<p>' +
-			"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
-			"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/> &nbsp; &nbsp; " +
-			"<input class='remove-button' type='image' src='images/notification_remove.png' title='Remove'/></p>" +
-			'</div>' +
+			'<table class="commands"><tr>' +
+			"<td><input class='ok-button' type='image' src='images/notification_done.png' title='Save'/></br><span class='smaller'>Save</span></td>" +
+			"<td><input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/></br><span class='smaller'>Cancel</span></td>" +
+			"<td>&nbsp;&nbsp;</td>" +
+			"<td><input class='remove-button' type='image' src='images/notification_remove.png' title='Remove'/></br><span class='smaller'>Remove</span></td>" +
+			'</tr></table></div>' +
 			'</form></div>');
 		$form.hide();
 		$form.find(".ip_start").val(ni.second);
