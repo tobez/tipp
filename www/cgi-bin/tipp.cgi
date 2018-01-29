@@ -194,6 +194,11 @@ sub handle_net
 						$cname = $r->{class_name};
 						last;
 					}
+					if ($c->contains($r->{nn})) {
+						$cid = $r->{class_id};
+						$cname = $r->{class_name};
+						last;
+					}
 				}
 				push @m, { net => "$c", nn => $c, free => 1, id => 0, class_name => $cname, class_id => $cid };
 			}
@@ -415,7 +420,7 @@ sub handle_merge_net
 	return { error => "No neighbouring network (maybe someone else changed it?)" }
 		unless $net1;
 	return { error => "Permission \"net\" denied" } unless perm_check("net", $net0->{class_id});
-	
+
 	my $n0 = N($net0->{net});
 	my $n1 = N($net1->{net});
 	my $super = N($n0->network->addr . "/" . ($n0->masklen - 1))->network;
@@ -1578,13 +1583,13 @@ sub gen_calculated_params
 	$c->{f}            = $n->version;
 	if ($c->{net} =~ /^10\.|^172\.|^192\.168\.|^100\./) {
 		if ($c->{net} =~ /^10\./) {
-			$c->{private} = 1;
+			$c->{private} = 'RFC1918';
 		} elsif ($c->{net} =~ /^172\.(\d+)\./ && $1 >= 16 && $1 <= 31) {
-			$c->{private} = 1;
+			$c->{private} = 'RFC1918';
 		} elsif ($c->{net} =~ /^192\.168\./) {
-			$c->{private} = 1;
+			$c->{private} = 'RFC1918';
 		} elsif ($c->{net} =~ /^100\.(\d+)\./ && $1 >= 64 && $1 <= 127) {
-			$c->{private} = 1;
+			$c->{private} = 'RFC6598';
 		}
 	}
 }
