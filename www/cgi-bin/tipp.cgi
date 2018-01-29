@@ -2168,12 +2168,19 @@ sub log_change
 	$what = "?" unless length($what) == 1;
 	my $when = $p{when} || time;
 	my $dbh = connect_db();
+    my $who = remote_user();
 	db_insert 'changelog', {
 		change	=> $change,
-		who		=> remote_user(),
+		who		=> $who,
 		what	=> $what,
 		created	=> $when,
 	};
+	TIPP::log_change(
+		what => $what,
+		who  => $who,
+		when => $when,
+		text => $change
+	);
 }
 
 sub result

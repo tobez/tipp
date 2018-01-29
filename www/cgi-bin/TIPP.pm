@@ -17,4 +17,16 @@ our @linkify = (
 	},
 );
 
+sub log_change
+{
+    my %p = @_;
+    #
+    # If you need any extra logging, here's what available:
+    #
+    # $p{what}: N=network, R=range, I=ip, G=group, U=user, ?=?
+    # $p{who}: user name
+    # $p{when}: epoch time
+    # $p{text}: description of the change
+}
+
 1;
