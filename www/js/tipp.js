@@ -1127,63 +1127,7 @@ function add_class_link($el, class_id)
 			$el.find("span.ui-icon").removeClass("ui-icon-carat-1-e");
 			$el.find("span.ui-icon").addClass("ui-icon-carat-1-n");
 			var $div = $("<div class='linklist'></div>");
-			var $ul  = $("<ul></ul>");
-			$div.hide().append($ul);
-			var n = res.length;
-			for (var i = 0; i < n; i++) {
-				var v = res[i];
-				var free_space = v.addresses;
-				if (v.misclassified) {
-					var $li = snippet("misclassified-class-range", {
-						misclassified : v.misclassified
-					});
-					$ul.append($li);
-					$li.data("@net", v);
-					add_net_link($li, { misclassified: v.misclassified, class_id: v.class_id });
-					continue;
-				}
-				if (v.f == 6) {
-					free_space = (100 * (new Number(v.addresses) / (new Number(v.addresses) + new Number(v.used)))).toFixed(1);
-					if (free_space <= 0)
-						free_space = (new Number(0)).toFixed(1);
-					else if (free_space > 100)
-						free_space = (new Number(100)).toFixed(1);
-					free_space = "" + free_space + "%";
-				}
-				var $li = $("<li class='class-range'>" +
-					"<div>" +
-					// XXX this fixed width is unsatisfactory for IPv6
-					// XXX maybe this <li> should be table-like
-					"<a href='#' class='show-net without-free td-like' style='width: 14em;'>" +
-					'<span class="form-icon ui-icon ui-icon-carat-1-e"></span>' +
-					v.net + "</a>" +
-					"<span class='netinfo td-like' style='width: 7em;'> " +
-					"<a href='#' class='show-net with-free'>" + free_space + " free</a>" +
-					"</span>" +
-					'<span class="buttons td-like">' + 
-					maybe("range", class_id, button_icon("edit-range", "document", "Edit range")) +
-					' ' + maybe("range", class_id, button_icon("split-range", "scissors", "Split range")) +
-					(v.addresses == 0 ? "" :
-					' ' + maybe("net", class_id, button_icon("allocate", "plus", "Allocate network in this range"))) +
-					(v.used != 0 ? "" :
-					' ' + maybe("range", class_id, button_icon("delete-range", "close", "Delete this range"))) +
-					(v.used == 0 ? "" :
-					' ' + button_icon("export-csv", "disk", "Export CSV")) +
-					"</span>" +
-					'<span class="description td-like">' + v.descr +
-					"</span>" +
-					"<span class='extras-here'></span></div></li>");
-				$ul.append($li);
-				$li.data("@net", v);
-				class_range_net_link($li);
-				class_range_edit_link($li);
-				class_range_remove_link($li);
-				class_range_split_link($li);
-				add_export_csv($li, v, 1);
-				if (v.addresses > 0)
-					$li.find("a.with-free").addClass("has-free-space");
-				add_net_link($li, { class_range_id: v.id });
-			}
+			insert_class_link($div,res);
 			$el.parent().append($div);
 			$div.slideDown("fast");
 			remove_class_link($el, class_id);
@@ -1191,6 +1135,69 @@ function add_class_link($el, class_id)
 		ev.preventDefault();
 		ev.stopPropagation();
 	});
+}
+
+function insert_class_link($div,res)
+{
+	var $ul  = $("<ul></ul>");
+	$div.hide().append($ul);
+	var n = res.length;
+	for (var i = 0; i < n; i++) {
+		var v = res[i];
+		var class_id = v.class_id;
+		var free_space = v.addresses;
+		if (v.misclassified) {
+			var $li = snippet("misclassified-class-range", {
+				misclassified : v.misclassified
+			});
+			$ul.append($li);
+			$li.data("@net", v);
+			add_net_link($li, { misclassified: v.misclassified, class_id: v.class_id });
+			continue;
+		}
+		if (v.f == 6) {
+			free_space = (100 * (new Number(v.addresses) / (new Number(v.addresses) + new Number(v.used)))).toFixed(1);
+			if (free_space <= 0)
+				free_space = (new Number(0)).toFixed(1);
+			else if (free_space > 100)
+				free_space = (new Number(100)).toFixed(1);
+			free_space = "" + free_space + "%";
+		}
+		var $li = $("<li class='class-range'>" +
+			"<div>" +
+			// XXX this fixed width is unsatisfactory for IPv6
+			// XXX maybe this <li> should be table-like
+			"<a href='#' class='show-net without-free td-like' style='width: 14em;'>" +
+			'<span class="form-icon ui-icon ui-icon-carat-1-e"></span>' +
+			v.net + "</a>" +
+			"<span class='netinfo td-like' style='width: 7em;'> " +
+			"<a href='#' class='show-net with-free'>" + free_space + " free</a>" +
+			"</span>" +
+			'<span class="buttons td-like">' +
+			maybe("range", class_id, button_icon("edit-range", "document", "Edit range")) +
+			' ' + maybe("range", class_id, button_icon("split-range", "scissors", "Split range")) +
+			(v.addresses == 0 ? "" :
+			' ' + maybe("net", class_id, button_icon("allocate", "plus", "Allocate network in this range"))) +
+			(v.used != 0 ? "" :
+			' ' + maybe("range", class_id, button_icon("delete-range", "close", "Delete this range"))) +
+			(v.used == 0 ? "" :
+			' ' + button_icon("export-csv", "disk", "Export CSV")) +
+			"</span>" +
+			'<span class="description td-like">' + v.descr +
+			"</span>" +
+			"<span class='extras-here'></span></div></li>");
+		$ul.append($li);
+		$li.data("@net", v);
+		class_range_net_link($li);
+		class_range_edit_link($li);
+		class_range_remove_link($li);
+		class_range_split_link($li);
+		add_export_csv($li, v, 1);
+		if (v.addresses > 0)
+			$li.find("a.with-free").addClass("has-free-space");
+		add_net_link($li, { class_range_id: v.id });
+	}
+	$div.slideDown("fast");
 }
 
 function class_range_net_link($li)
