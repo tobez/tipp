@@ -638,6 +638,8 @@ function search()
 	remote({what: "search", q: v}, function (res) {
 		var $div = $("<div class='linklist' id='main-content'></div>");
 		$div.hide();
+		$div.append($("<h2>Matching class ranges (" + res.ncr + ")</h2>"));
+		classes_ranges_search_results($div, res);
 		if (res.n.length != 0) {
 			$div.append($("<h2>Matching networks (" + res.nn +
 				");  <font size='smaller'>IPv4 addresses/used/free: " +
@@ -656,6 +658,18 @@ function search()
 		$("#view").append($div);
 		$div.slideDown("fast");
 	});
+}
+
+function classes_ranges_search_results($div, res)
+{
+	if (res.cr.length == 0 && !res.net_message)
+		res.net_message = "No matches.";
+	if (res.net_message)
+		$div.append(possibly_full_search("net", res.net_message));
+	var $tab  = $("<div class='linklist'></div>");
+	$div.append($tab);
+	insert_class_link($tab,res.cr);
+	$tab.find('tr.network:nth-child(even)').addClass('alt-row');
 }
 
 function network_search_results($div, res)
