@@ -11,7 +11,7 @@ var _PERMS = {};
 function init()
 {
 	_URL = "cgi-bin/tipp.cgi";
-	_VER = "2012092501";
+	_VER = "2018092500";
 	_CHANGELOG_PAGE_SIZE = 30;
 
 	message("The status of the latest update is shown here");
