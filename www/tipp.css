@@ -341,6 +341,11 @@ table.networks td {
 	vertical-align: top;
 }
 
+table.commands td {
+	text-align: center;
+	padding: 4px;
+}
+
 table.addresses td.ip {
 	width: 14em;
 }

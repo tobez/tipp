@@ -19,7 +19,7 @@ use CGI::Cookie;
 use Data::Dump 'dd', 'pp';
 use Data::Compare ();
 
-our $VERSION = "2012092501";
+our $VERSION = "2018092500";
 our $what   = param("what")   || "root";
 our $id     = param("id")     || 0;
 our $perms;
@@ -1007,8 +1007,10 @@ sub handle_search
 	my @s = grep { $_ ne "" } split /\s+/, $s;
 	return {error => "blank search string"} unless @s;
 
-	my %r = (search_networks(@s), search_ips(0, @s), search_ips(1, @s));
+	my %r = (search_classes_ranges(@s), search_networks(0, @s), search_networks(1, @s), search_ips(0, @s), search_ips(1, @s));
+	$r{cr}  ||= [];
 	$r{n}  ||= [];
+	$r{hn} ||= [];
 	$r{i}  ||= [];
 	$r{hi} ||= [];
 	return \%r;
@@ -1215,6 +1217,51 @@ sub handle_split
 	} else {
 		@n = map { "$_" } @n;
 		return {n => \@n, o => "$n", extra_msg => $extra_msg };
+	}
+}
+
+sub handle_split_class_range
+{
+	my $id = param("id") || "";
+	return { error => "split class id must be specified" } unless $id;
+
+	my $dbh = connect_db();
+	my $cf  = db_fetch {
+		my $cr : classes_ranges;
+		$cr->id == $id;
+	};
+	return { error => "class range to split not found" } unless $cf;
+	return { error => "Permission \"class\" denied" } unless perm_check( "class", $cf->{class_id} );
+
+	my $net = N($cf->{net});
+	my $l = $net->masklen;
+	my $nl = $l + 1;
+	return { error => "class range to split should be larger than a /30" } unless $l < 31;
+
+	my $n = $net->splitref($nl);
+	my $when  = time;
+	my $descr = $cf->{descr};
+	if ( param("confirmed") ) {
+		$descr = "[split] $descr" unless $descr =~ /^\[split\]/;
+		for my $nn (@$n) {
+			my $new_id = db_fetch { return `nextval('classes_ranges_id_seq')`; };
+			db_insert 'classes_ranges',
+			  {
+				  id       => $new_id,
+				  net      => $nn,
+				  class_id => $cf->{class_id},
+				  descr    => $descr,
+			  };
+			log_change( range => "Added range class $nn (via split)", when => $when );
+		}
+
+		db_delete { classes_ranges->id == $id };
+		log_change( range => "Removed range $net (via split)", when => $when );
+		$dbh->commit;
+		return { msg => "Range $net successfully split", n => $n };
+	} else {
+		@$n = map {"$_"} @$n;
+		return { n => $n, o => "$net" };
 	}
 }
 
@@ -1626,10 +1673,18 @@ sub get_ip_info
 
 sub search_networks
 {
-	my @s = @_;
+	my ($history, @s) = @_;
 	my $only = param("only") || "";
 	return () if $only && $only ne "net";
-	my @net_sql = ('n.invalidated = 0', 'n.class_id = c.id', 'cr.net >>= n.net');
+	my @net_sql = ('n.class_id = c.id', 'cr.net >>= n.net');
+	my $name;
+	if ($history) {
+		push @net_sql, 'n.invalidated <> 0';
+		$name = "hn";
+	} else {
+		push @net_sql, 'n.invalidated = 0';
+		$name = "n";
+	}
 	my @net_bind;
 	for my $t (@s) {
 		my $term_sql;
@@ -1681,7 +1736,7 @@ sub search_networks
 		my $id2tag = fetch_tags_for_networks(@n);
 		my @ids = map { $_->{id} } @n;
 		my %used;
-		if (@n) {
+		if (@n && !$history) {
 			%used = db_fetch {
 				my $n : networks;
 				my $i : ips;
@@ -1703,18 +1758,104 @@ sub search_networks
 			gen_calculated_params($n);
 			$n->{used} = $used{$n->{id}}||0;
 			$n->{unused} = $n->{sz} - $n->{used};
+			$n->{historic} = $history;
 			if ($n->{f} == 4) {
 				$tot_size += $n->{sz};
 				$tot_used += $n->{used};
 				$tot_free += $n->{unused};
 			}
 		}
-		return (n => \@n, nn => scalar(@n),
-			v4_used => $tot_used,
-			v4_free => $tot_free,
-			v4_size => $tot_size);
+		return ($name => \@n, "n$name" => scalar(@n),
+			"v4_used_$name" => $tot_used,
+			"v4_free_$name" => $tot_free,
+			"v4_size_$name" => $tot_size);
 	} else {
-		return (nn => scalar(@n),
+		return ("n$name" => scalar(@n),
+			net_message => "Too many networks found, try to limit the search, or {view all results anyway}.");
+	}
+}
+
+sub search_classes_ranges
+{
+	my @s = @_;
+	my $only = param("only") || "";
+	return () if $only && $only ne "net";
+	my @net_sql = ('cr.class_id = c.id');
+	my $name = "cr";
+
+	my @net_bind;
+	for my $t (@s) {
+		my $term_sql;
+		if ($t =~ /^(\d+)\.$/ && $1 > 0 && $1 <= 255) {
+			$term_sql = "cr.net <<= ?";
+			push @net_bind, "$1.0.0.0/8";
+		} elsif ($t =~ /^(\d+)\.(\d+)\.?$/ && $1 >0 && $1 <= 255 && $2 <= 255) {
+			$term_sql = "(cr.net <<= ? or cr.net >>= ?)";
+			push @net_bind, "$1.$2.0.0/16", "$1.$2.0.0/16";
+		} elsif ($t =~ /^(\d+)\.(\d+)\.(\d+)\.?$/ && $1 >0 && $1 <= 255 && $2 <= 255 && $3 <= 255) {
+			$term_sql = "(cr.net <<= ? or cr.net >>= ?)";
+			push @net_bind, "$1.$2.$3.0/24", "$1.$2.$3.0/24";
+		} elsif ($t =~ /^$RE{net}{IPv4}$/) {
+			$term_sql = "(cr.net >>= ?)";
+			push @net_bind, $t;
+		} elsif ($t =~ /^$RE{net}{IPv4}\/(\d+)$/ && $1 <= 32) {
+			$term_sql = "(cr.net <<= ? or cr.net >>= ?)";
+			push @net_bind, $t, $t;
+		} else {
+			my $nn = N($t);
+			if ($nn && $nn->version == 6) {
+				if ($nn->masklen < 128) {
+					$term_sql = "(cr.net <<= ? or cr.net >>= ?)";
+					@net_bind, "$nn", "$nn";
+				} else {
+					$term_sql = "(cr.net >>= ?)";
+					push @net_bind, "$nn";
+				}
+			}
+		}
+		if ($term_sql) {
+			push @net_sql, "(($term_sql) or (cr.descr ilike ?))";
+		} else {
+			push @net_sql, "cr.descr ilike ?";
+		}
+		push @net_bind, "%$t%";
+	}
+
+	my $dbh = connect_db();
+	my @cr = @{
+		$dbh->selectall_arrayref("select " .
+			"cr.net, cr.id, cr.class_id, c.name as class_name, cr.descr " .
+			" from classes c,classes_ranges cr where " .
+			join(" and ", @net_sql) . " order by net",
+			{Slice=>{}}, @net_bind)
+		|| []
+	};
+
+	if (@cr < 50 || param("all")) {
+		my $id2tag = fetch_tags_for_networks(@cr);
+		my @ids = map { $_->{id} } @cr;
+		my %used = db_fetch {
+			my $cr : classes_ranges;
+			my $n : networks;
+			$cr->id <- @ids;
+			join $cr < $n => db_fetch {
+				inet_contains($cr->net, $n->net);
+				$n->invalidated == 0;
+			};
+			return -k $cr->id, sum(2**(2**(family($n->net)+1)-masklen($n->net)));
+		};
+
+		for my $c (@cr) {
+			$c->{net} =~ /\/(\d+)/;
+			gen_calculated_params($c);
+			$c->{used} = $used{$c->{id}}||0;
+			$c->{addresses} = 2**(2**($c->{f}+1)-$1) - $c->{used};
+			$c->{descr} = u2p($c->{descr}||"");
+		}
+
+		return ($name => \@cr, "n$name" => scalar(@cr));
+	} else {
+		return ("n$name" => scalar(@cr),
 			net_message => "Too many networks found, try to limit the search, or {view all results anyway}.");
 	}
 }

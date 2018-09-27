@@ -11,7 +11,7 @@ var _PERMS = {};
 function init()
 {
 	_URL = "cgi-bin/tipp.cgi";
-	_VER = "2012092501";
+	_VER = "2018092500";
 	_CHANGELOG_PAGE_SIZE = 30;
 
 	message("The status of the latest update is shown here");
@@ -638,10 +638,12 @@ function search()
 	remote({what: "search", q: v}, function (res) {
 		var $div = $("<div class='linklist' id='main-content'></div>");
 		$div.hide();
+		$div.append($("<h2>Matching class ranges (" + res.ncr + ")</h2>"));
+		classes_ranges_search_results($div, res);
 		if (res.n.length != 0) {
 			$div.append($("<h2>Matching networks (" + res.nn +
 				");  <font size='smaller'>IPv4 addresses/used/free: " +
-				res.v4_size + "/" + res.v4_used + "/" + res.v4_free +
+				res.v4_size_n + "/" + res.v4_used_n + "/" + res.v4_free_n +
 				"</font></h2>"));
 		} else {
 			$div.append($("<h2>Matching networks (" + res.nn + ")</h2>"));
@@ -649,11 +651,25 @@ function search()
 		network_search_results($div, res);
 		$div.append($("<h2>Matching IP addresses (" + res.ni + ")</h2>"));
 		ip_search_results($div, res);
+		$div.append($("<h2>Matching historic networks (" + res.nhn + ")</h2>"));
+		network_history_search_results($div, res);
 		$div.append($("<h2>Matching historic IP addresses (" + res.nhi + ")</h2>"));
 		ip_history_search_results($div, res);
 		$("#view").append($div);
 		$div.slideDown("fast");
 	});
+}
+
+function classes_ranges_search_results($div, res)
+{
+	if (res.cr.length == 0 && !res.net_message)
+		res.net_message = "No matches.";
+	if (res.net_message)
+		$div.append(possibly_full_search("net", res.net_message));
+	var $tab  = $("<div class='linklist'></div>");
+	$div.append($tab);
+	insert_class_link($tab,res.cr);
+	$tab.find('tr.network:nth-child(even)').addClass('alt-row');
 }
 
 function network_search_results($div, res)
@@ -667,6 +683,21 @@ function network_search_results($div, res)
 	var n = res.n.length;
 	for (var i = 0; i < n; i++) {
 		$tab.append(insert_network(res.n[i]));
+	}
+	$tab.find('tr.network:nth-child(even)').addClass('alt-row');
+}
+
+function network_history_search_results($div, res)
+{
+	if (res.hn.length == 0 && !res.net_message)
+		res.net_message = "No matches.";
+	if (res.net_message)
+		$div.append(possibly_full_search("net", res.net_message));
+	var $tab  = $("<table class='networks'></table>");
+	$div.append($tab);
+	var n = res.hn.length;
+	for (var i = 0; i < n; i++) {
+		$tab.append(insert_network(res.hn[i]));
 	}
 	$tab.find('tr.network:nth-child(even)').addClass('alt-row');
 }
@@ -902,10 +933,11 @@ function add_network($where)
 			'<tr><td class="label">Tags:</td><td>' +
 			'<input type="text" size="64" maxlength="256" class="network-tags"/>' +
 			'</td></tr>' +
-			'</table><p>' +
-			"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
-			"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/></p>" +
-			'</div></form></div>';
+			'</table>' +
+			'<table class="commands"><tr>' +
+			"<td><input class='ok-button' type='image' src='images/notification_done.png' title='Save'/></br><span class='smaller'>Save</span></td>" +
+			"<td><input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/></br><span class='smaller'>Cancel</span></td>" +
+			'</tr></table></div></form></div>';
 		var $form = $(form);
 		var $insert = $form;
 		$form.hide();
@@ -1034,11 +1066,11 @@ function add_class_range()
 			'<tr><td class="label">Description:</td><td>' +
 			'<input type="text" size="64" maxlength="256" class="class-range-description"/>' +
 			'</td></tr>' +
-			'</table><p>' +
-			"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
-			"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/>" +
-			"</p>" +
-			'</div></form></div>';
+			'</table>' +
+			'<table class="commands"><tr>' +
+			"<td><input class='ok-button' type='image' src='images/notification_done.png' title='Save'/></br><span class='smaller'>Save</span></td>" +
+			"<td><input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/></br><span class='smaller'>Cancel</span></td>" +
+			'</tr></table></div></form></div>';
 		var $form = $(form);
 		$form.hide();
 		$("#view").prepend($form);
@@ -1109,61 +1141,7 @@ function add_class_link($el, class_id)
 			$el.find("span.ui-icon").removeClass("ui-icon-carat-1-e");
 			$el.find("span.ui-icon").addClass("ui-icon-carat-1-n");
 			var $div = $("<div class='linklist'></div>");
-			var $ul  = $("<ul></ul>");
-			$div.hide().append($ul);
-			var n = res.length;
-			for (var i = 0; i < n; i++) {
-				var v = res[i];
-				var free_space = v.addresses;
-				if (v.misclassified) {
-					var $li = snippet("misclassified-class-range", {
-						misclassified : v.misclassified
-					});
-					$ul.append($li);
-					$li.data("@net", v);
-					add_net_link($li, { misclassified: v.misclassified, class_id: v.class_id });
-					continue;
-				}
-				if (v.f == 6) {
-					free_space = (100 * (new Number(v.addresses) / (new Number(v.addresses) + new Number(v.used)))).toFixed(1);
-					if (free_space <= 0)
-						free_space = (new Number(0)).toFixed(1);
-					else if (free_space > 100)
-						free_space = (new Number(100)).toFixed(1);
-					free_space = "" + free_space + "%";
-				}
-				var $li = $("<li class='class-range'>" +
-					"<div>" +
-					// XXX this fixed width is unsatisfactory for IPv6
-					// XXX maybe this <li> should be table-like
-					"<a href='#' class='show-net without-free td-like' style='width: 14em;'>" +
-					'<span class="form-icon ui-icon ui-icon-carat-1-e"></span>' +
-					v.net + "</a>" +
-					"<span class='netinfo td-like' style='width: 7em;'> " +
-					"<a href='#' class='show-net with-free'>" + free_space + " free</a>" +
-					"</span>" +
-					'<span class="buttons td-like">' + 
-					maybe("range", class_id, button_icon("edit-range", "document", "Edit range")) +
-					(v.addresses == 0 ? "" :
-					' ' + maybe("net", class_id, button_icon("allocate", "plus", "Allocate network in this range"))) +
-					(v.used != 0 ? "" :
-					' ' + maybe("range", class_id, button_icon("delete-range", "close", "Delete this range"))) +
-					(v.used == 0 ? "" :
-					' ' + button_icon("export-csv", "disk", "Export CSV")) +
-					"</span>" +
-					'<span class="description td-like">' + v.descr +
-					"</span>" +
-					"<span class='extras-here'></span></div></li>");
-				$ul.append($li);
-				$li.data("@net", v);
-				class_range_net_link($li);
-				class_range_edit_link($li);
-				class_range_remove_link($li);
-				add_export_csv($li, v, 1);
-				if (v.addresses > 0)
-					$li.find("a.with-free").addClass("has-free-space");
-				add_net_link($li, { class_range_id: v.id });
-			}
+			insert_class_link($div,res);
 			$el.parent().append($div);
 			$div.slideDown("fast");
 			remove_class_link($el, class_id);
@@ -1171,6 +1149,69 @@ function add_class_link($el, class_id)
 		ev.preventDefault();
 		ev.stopPropagation();
 	});
+}
+
+function insert_class_link($div,res)
+{
+	var $ul  = $("<ul></ul>");
+	$div.hide().append($ul);
+	var n = res.length;
+	for (var i = 0; i < n; i++) {
+		var v = res[i];
+		var class_id = v.class_id;
+		var free_space = v.addresses;
+		if (v.misclassified) {
+			var $li = snippet("misclassified-class-range", {
+				misclassified : v.misclassified
+			});
+			$ul.append($li);
+			$li.data("@net", v);
+			add_net_link($li, { misclassified: v.misclassified, class_id: v.class_id });
+			continue;
+		}
+		if (v.f == 6) {
+			free_space = (100 * (new Number(v.addresses) / (new Number(v.addresses) + new Number(v.used)))).toFixed(1);
+			if (free_space <= 0)
+				free_space = (new Number(0)).toFixed(1);
+			else if (free_space > 100)
+				free_space = (new Number(100)).toFixed(1);
+			free_space = "" + free_space + "%";
+		}
+		var $li = $("<li class='class-range'>" +
+			"<div>" +
+			// XXX this fixed width is unsatisfactory for IPv6
+			// XXX maybe this <li> should be table-like
+			"<a href='#' class='show-net without-free td-like' style='width: 14em;'>" +
+			'<span class="form-icon ui-icon ui-icon-carat-1-e"></span>' +
+			v.net + "</a>" +
+			"<span class='netinfo td-like' style='width: 7em;'> " +
+			"<a href='#' class='show-net with-free'>" + free_space + " free</a>" +
+			"</span>" +
+			'<span class="buttons td-like">' +
+			maybe("range", class_id, button_icon("edit-range", "document", "Edit range")) +
+			' ' + maybe("range", class_id, button_icon("split-range", "scissors", "Split range")) +
+			(v.addresses == 0 ? "" :
+			' ' + maybe("net", class_id, button_icon("allocate", "plus", "Allocate network in this range"))) +
+			(v.used != 0 ? "" :
+			' ' + maybe("range", class_id, button_icon("delete-range", "close", "Delete this range"))) +
+			(v.used == 0 ? "" :
+			' ' + button_icon("export-csv", "disk", "Export CSV")) +
+			"</span>" +
+			'<span class="description td-like">' + v.descr +
+			"</span>" +
+			"<span class='extras-here'></span></div></li>");
+		$ul.append($li);
+		$li.data("@net", v);
+		class_range_net_link($li);
+		class_range_edit_link($li);
+		class_range_remove_link($li);
+		class_range_split_link($li);
+		add_export_csv($li, v, 1);
+		if (v.addresses > 0)
+			$li.find("a.with-free").addClass("has-free-space");
+		add_net_link($li, { class_range_id: v.id });
+	}
+	$div.slideDown("fast");
 }
 
 function class_range_net_link($li)
@@ -1217,6 +1258,32 @@ function class_range_remove_link($li, ev)
 	});
 }
 
+function class_range_split_link($li, ev)
+{
+	$li.find(".split-range").click(function(ev) {
+		ev.preventDefault();
+		ev.stopPropagation();
+		clear_selection();
+		var v = $li.data("@net");
+		remote({what: "split-class-range", id: v.id}, function (res) {
+			var msg = "<p>Class range <strong>" + res.o + "</strong> will be split into the following:</p><p class='netlist'>";
+			var n = res.n.length;
+			for (var i = 0; i < n; i++) {
+				var vv = res.n[i];
+				msg += vv + "<br/>";
+			}
+			msg += "</p><p>Are you sure you want to proceed?</p>";
+
+			ask(msg, function () {
+				remote({what: "split-class-range", id: v.id, confirmed: 0}, function (res) {
+					message(res.msg);
+					$li.slideUp("fast", function () { $li.remove(); });
+				});
+			});
+		});
+	});
+}
+
 function edit_class_range($li)
 {
 	var v = $li.data("@net");
@@ -1225,11 +1292,11 @@ function edit_class_range($li)
 		'<table><tr><td class="label">Class:</td><td>' +
 		gen_class_input(v.class_id, "range") + '</td></tr><tr><td class="label">Description:</td><td>' +
 		'<input type="text" size="64" maxlength="256" class="class-range-description"/>' +
-		'</td></tr></table><p>' +
-		"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
-		"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/>" +
-		"</p>" +
-		'</div></form></div>';
+		'</td></tr></table>' +
+		'<table class="commands"><tr>' +
+		"<td><input class='ok-button' type='image' src='images/notification_done.png' title='Save'/></br><span class='smaller'>Save</span></td>" +
+		"<td><input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/></br><span class='smaller'>Cancel</span></td>" +
+		'</tr></table></div></form></div>';
 	var $form = $(form);
 	$form.hide();
 	$form.find(".class-range-description").val(v.descr);
@@ -1329,15 +1396,20 @@ function insert_network(v)
 		if (v.f == 4 && (v.used || v.unused)) {
 			extra = "<span class='usage_stats'>" + v.sz + "/" + v.used + "/" + v.unused + "</span>&nbsp;&nbsp;";
 		}
-		$ni = $("<tr class='network can-select'><td class='network'>" +
+		ni = "<tr class='network can-select'><td class='network'>" +
 			"<form class='button-form'>" +
 			maybe("net", v.class_id, '<a class="edit-button" href="#" title="Edit"><span class="form-icon ui-icon ui-icon-document"></span></a> ') +
-			'<span>' +
-			"<a class='address-link' href='#'>" + v.net + "</a>" +
-			"</span></form></td><td class='class_name'>" + extra +
+			'<span>';
+		if (v.historic == 1) {
+			ni = ni + v.net;
+		} else {
+			ni = ni + "<a class='address-link' href='#'>" + v.net + "</a>";
+		}
+		ni = ni + "</span></form></td><td class='class_name'>" + extra +
 			"<span class='netinfo class_name'> " + v.class_name + "</span>" +
 			"</td><td class='description'>" +
-			"<span class='netinfo'>" + linkify(v.descr) + "</span></td></tr>");
+			"<span class='netinfo'>" + linkify(v.descr) + "</span></td></tr>";
+		$ni = $(ni);
 	}
 	if (v.wrong_class == 1) {
 		$ni.find("span.class_name").addClass("noteworthy").tooltip({ 
@@ -1350,7 +1422,9 @@ function insert_network(v)
 	}
 	clear_selection();
 	$ni.data("@net", v).find(".edit-button").click(function(ev){edit_network($ni, ev)});
-	add_address_link($ni);
+	if (v.historic !== 1) {
+		add_address_link($ni);
+	}
 	return $ni;
 }
 
@@ -1448,15 +1522,19 @@ function edit_network($li, ev)
 		'<tr><td class="label">Tags:</td><td>' +
 		'<input type="text" size="64" maxlength="256" class="network-tags"/>' +
 		'</td></tr>' +
-		'</table><p>' +
-		"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
-		"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/> &nbsp; &nbsp; " +
-		"<input class='history-button' type='image' src='images/clock.png' title='History'/> &nbsp; &nbsp; " +
-		maybe("net", v.class_id, "<input class='remove-button' type='image' src='images/notification_remove.png' title='Remove'/>");
+		'</table>' +
+		'<table class="commands"><tr>' +
+		"<td><input class='ok-button' type='image' src='images/notification_done.png' title='Save'/></br><span class='smaller'>Save</span></td>" +
+		"<td><input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/></br><span class='smaller'>Cancel</span></td>" +
+		"<td>&nbsp;&nbsp;</td>" +
+		"<td><input class='history-button' type='image' src='images/clock.png' title='History'/></br><span class='smaller'>History</span></td>" +
+		"<td>&nbsp;&nbsp;</td>" +
+		maybe("net", v.class_id, "<td><input class='remove-button' type='image' src='images/notification_remove.png' title='Remove'/></br><span class='smaller'>Remove</span></td>");
 	if (v.merge_with && can("net", v.class_id))
-		form += "&nbsp;&nbsp;<input class='merge-button' type='image' src='images/load_download.png' title='Merge with " +
-		v.merge_with + "'/>";
-	form += '</p></div></form></div></td></tr>';
+		form += "<td>&nbsp;&nbsp;</td>" +
+		"<td><input class='merge-button' type='image' src='images/load_download.png' title='Merge with " +
+		v.merge_with + "'/></br><span class='smaller'>Merge</span></td>";
+	form += '</tr></table></div></form></div></td></tr>';
 	var $form = $(form);
 	$form.find("div.edit-header").hide();
 	$form.find(".network-description").val(v.descr);
@@ -1607,11 +1685,12 @@ function add_edit_range($pages, ni)
 			'<tr><td class="label">Comments:</td><td>' + 
 			'<textarea rows=6 cols=64 class="ip-comments"></textarea></td></tr>' +
 			'</table>' +
-			'<p>' +
-			"<input class='ok-button' type='image' src='images/notification_done.png' title='Save'/> " +
-			"<input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/> &nbsp; &nbsp; " +
-			"<input class='remove-button' type='image' src='images/notification_remove.png' title='Remove'/></p>" +
-			'</div>' +
+			'<table class="commands"><tr>' +
+			"<td><input class='ok-button' type='image' src='images/notification_done.png' title='Save'/></br><span class='smaller'>Save</span></td>" +
+			"<td><input class='cancel-button' type='image' src='images/notification_error.png' title='Cancel'/></br><span class='smaller'>Cancel</span></td>" +
+			"<td>&nbsp;&nbsp;</td>" +
+			"<td><input class='remove-button' type='image' src='images/notification_remove.png' title='Remove'/></br><span class='smaller'>Remove</span></td>" +
+			'</tr></table></div>' +
 			'</form></div>');
 		$form.hide();
 		$form.find(".ip_start").val(ni.second);
